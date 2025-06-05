@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -35,20 +36,20 @@
     --radius: 0.5rem;
 
     --sidebar-background: 0 0% 98%;
-
     --sidebar-foreground: 240 5.3% 26.1%;
-
     --sidebar-primary: 240 5.9% 10%;
-
     --sidebar-primary-foreground: 0 0% 98%;
-
     --sidebar-accent: 240 4.8% 95.9%;
-
     --sidebar-accent-foreground: 240 5.9% 10%;
-
     --sidebar-border: 220 13% 91%;
-
     --sidebar-ring: 217.2 91.2% 59.8%;
+
+    /* Custom Skecho colors matching the logo */
+    --skecho-coral: 15 70% 70%;
+    --skecho-coral-light: 15 60% 85%;
+    --skecho-coral-dark: 15 80% 55%;
+    --skecho-warm-gray: 30 15% 85%;
+    --skecho-charcoal: 0 0% 15%;
   }
 
   .dark {
@@ -97,5 +98,36 @@
 
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+/* Custom utility classes for Skecho colors */
+@layer utilities {
+  .bg-skecho-coral {
+    background-color: hsl(var(--skecho-coral));
+  }
+  
+  .bg-skecho-coral-light {
+    background-color: hsl(var(--skecho-coral-light));
+  }
+  
+  .bg-skecho-coral-dark {
+    background-color: hsl(var(--skecho-coral-dark));
+  }
+  
+  .text-skecho-coral {
+    color: hsl(var(--skecho-coral));
+  }
+  
+  .text-skecho-coral-dark {
+    color: hsl(var(--skecho-coral-dark));
+  }
+  
+  .text-skecho-charcoal {
+    color: hsl(var(--skecho-charcoal));
+  }
+  
+  .border-skecho-coral {
+    border-color: hsl(var(--skecho-coral));
   }
 }

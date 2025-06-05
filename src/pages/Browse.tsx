@@ -11,12 +11,12 @@ const Browse = () => {
   const [sortBy, setSortBy] = useState<string>("newest");
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-purple-50">
+    <div className="min-h-screen bg-gradient-to-br from-skecho-warm-gray/30 to-skecho-coral-light/20">
       <Navigation />
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-4">Browse Artworks</h1>
+          <h1 className="text-4xl font-bold mb-4 text-skecho-charcoal">Browse Artworks</h1>
           <p className="text-xl text-gray-600">Discover unique pieces from talented independent artists</p>
         </div>
 

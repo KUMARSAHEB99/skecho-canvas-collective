@@ -39,7 +39,7 @@ const featuredArtworks = [
     price: 380,
     category: "Mixed Media",
     likes: 124,
-    imageGradient: "from-purple-500 to-indigo-400"
+    imageGradient: "from-skecho-coral to-skecho-coral-dark"
   },
   {
     id: 5,
@@ -57,7 +57,7 @@ const featuredArtworks = [
     price: 520,
     category: "Photography",
     likes: 93,
-    imageGradient: "from-orange-400 to-red-400"
+    imageGradient: "from-orange-400 to-skecho-coral"
   }
 ];
 
@@ -66,7 +66,7 @@ export const FeaturedArtworks = () => {
     <section className="py-20 px-4">
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-12">
-          <h2 className="text-4xl font-bold mb-4">Featured Artworks</h2>
+          <h2 className="text-4xl font-bold mb-4 text-skecho-charcoal">Featured Artworks</h2>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
             Discover exceptional pieces from our most talented artists
           </p>
@@ -92,19 +92,19 @@ export const FeaturedArtworks = () => {
                 <div className="space-y-3">
                   <div>
                     <Link to={`/artwork/${artwork.id}`}>
-                      <h3 className="text-xl font-semibold hover:text-purple-600 transition-colors cursor-pointer">
+                      <h3 className="text-xl font-semibold hover:text-skecho-coral-dark transition-colors cursor-pointer">
                         {artwork.title}
                       </h3>
                     </Link>
                     <Link to={`/artist/${artwork.artist.replace(' ', '-').toLowerCase()}`}>
-                      <p className="text-gray-600 hover:text-purple-600 transition-colors cursor-pointer">
+                      <p className="text-gray-600 hover:text-skecho-coral-dark transition-colors cursor-pointer">
                         by {artwork.artist}
                       </p>
                     </Link>
                   </div>
                   
                   <div className="flex items-center justify-between">
-                    <span className="text-sm bg-purple-100 text-purple-700 px-3 py-1 rounded-full">
+                    <span className="text-sm bg-skecho-coral-light text-skecho-coral-dark px-3 py-1 rounded-full">
                       {artwork.category}
                     </span>
                     <span className="text-sm text-gray-500 flex items-center gap-1">
@@ -113,10 +113,10 @@ export const FeaturedArtworks = () => {
                   </div>
                   
                   <div className="flex items-center justify-between pt-2">
-                    <span className="text-2xl font-bold text-purple-600">
+                    <span className="text-2xl font-bold text-skecho-coral">
                       ${artwork.price}
                     </span>
-                    <Button size="sm" className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700">
+                    <Button size="sm" className="bg-skecho-coral hover:bg-skecho-coral-dark text-white">
                       <ShoppingCart className="w-4 h-4 mr-2" />
                       Add to Cart
                     </Button>
@@ -129,7 +129,7 @@ export const FeaturedArtworks = () => {
 
         <div className="text-center">
           <Link to="/browse">
-            <Button size="lg" variant="outline" className="border-purple-200 hover:bg-purple-50">
+            <Button size="lg" variant="outline" className="border-skecho-coral text-skecho-coral-dark hover:bg-skecho-coral-light/30">
               View All Artworks
             </Button>
           </Link>
