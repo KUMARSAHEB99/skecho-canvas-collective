@@ -1,9 +1,30 @@
-
 import { Button } from "@/components/ui/button";
-import { User, ShoppingCart, Search } from "lucide-react";
-import { Link } from "react-router-dom";
+import { User, ShoppingCart, Search, LogOut, Palette } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "@/lib/AuthContext";
+import { auth } from "@/lib/firebase";
+import { signOut } from "firebase/auth";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export const Navigation = () => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+
+  const handleSignOut = async () => {
+    try {
+      await signOut(auth);
+      navigate("/");
+    } catch (error) {
+      console.error("Error signing out:", error);
+    }
+  };
+
   return (
     <nav className="bg-white/90 backdrop-blur-sm border-b border-skecho-coral/20 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -51,17 +72,48 @@ export const Navigation = () => {
                 3
               </span>
             </Button>
-            <Link to="/login">
-              <Button variant="ghost" size="sm" className="hover:bg-skecho-coral-light/50">
-                <User className="w-5 h-5 mr-2" />
-                Sign In
-              </Button>
-            </Link>
-            <Link to="/signup">
-              <Button className="bg-skecho-coral hover:bg-skecho-coral-dark text-white">
-                Join as Artist
-              </Button>
-            </Link>
+            
+            {user ? (
+              <div className="flex items-center space-x-4">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm" className="hover:bg-skecho-coral-light/50">
+                      <span className="text-gray-700 mr-2">
+                        {user.displayName || user.email}
+                      </span>
+                      <User className="w-5 h-5" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-48">
+                    <DropdownMenuItem>
+                      <Link to="/dashboard" className="flex items-center w-full">
+                        <Palette className="w-4 h-4 mr-2" />
+                        Switch to Seller
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={handleSignOut}>
+                      <LogOut className="w-4 h-4 mr-2" />
+                      Sign Out
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            ) : (
+              <>
+                <Link to="/signin">
+                  <Button variant="ghost" size="sm" className="hover:bg-skecho-coral-light/50">
+                    <User className="w-5 h-5 mr-2" />
+                    Sign In
+                  </Button>
+                </Link>
+                <Link to="/signup">
+                  <Button className="bg-skecho-coral hover:bg-skecho-coral-dark text-white">
+                    Join as Artist
+                  </Button>
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </div>
