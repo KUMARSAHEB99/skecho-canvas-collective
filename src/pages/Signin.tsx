@@ -23,7 +23,24 @@ const Signin = () => {
 
   const handleGoogleSignIn = async () => {
     try {
-      await signInWithPopup(auth, googleProvider);
+      const result = await signInWithPopup(auth, googleProvider);
+      
+      // Get the ID token
+      const idToken = await result.user.getIdToken();
+      
+      // Call backend to create/update user
+      const response = await fetch('http://localhost:3000/api/auth/create-user', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${idToken}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to create user in database');
+      }
+
       // The redirect will be handled by the useEffect above
     } catch (error) {
       console.error("Error signing in with Google:", error);
