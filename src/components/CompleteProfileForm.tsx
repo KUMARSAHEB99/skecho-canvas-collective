@@ -1,9 +1,11 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/components/ui/use-toast";
+import { AddressInput } from "./AddressInput";
+import { useAuth } from "@/lib/AuthContext";
+import axios from "axios";
 
 interface CompleteProfileFormProps {
   onSkip?: () => void;
@@ -18,31 +20,56 @@ export const CompleteProfileForm = ({
 }: CompleteProfileFormProps) => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user,checkProfileCompletion } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     phoneNumber: "",
-    address: ""
+    address: {
+      pincode: "",
+      addressLine1: "",
+      addressLine2: "",
+      city: "",
+      state: "",
+      country: "India"
+    }
   });
+
+  const handleAddressChange = (address: any) => {
+    setFormData(prev => ({
+      ...prev,
+      address
+    }));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
 
     try {
-      // This would typically be an API call to update the user's profile
-      // For now, we'll just simulate it with a timeout
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      // Show success message
+      const idToken = await user?.getIdToken();
+      
+      await axios.post(
+        "http://localhost:3000/api/user/complete-profile",
+        {
+          phoneNumber: formData.phoneNumber,
+          address: formData.address
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${idToken}`,
+          },
+        }
+      );
+      await checkProfileCompletion();
       toast({
         title: "Profile Updated",
         description: "Your profile has been successfully completed.",
         duration: 3000,
       });
 
-      // Redirect to the specified path
       navigate(redirectPath);
     } catch (error) {
+      console.error("Error updating profile:", error);
       toast({
         title: "Error",
         description: "Failed to update profile. Please try again.",
@@ -82,16 +109,13 @@ export const CompleteProfileForm = ({
       </div>
 
       <div className="space-y-2">
-        <label htmlFor="address" className="text-sm font-medium text-gray-700">
+        <label className="text-sm font-medium text-gray-700">
           Delivery Address
         </label>
-        <Textarea
-          id="address"
-          placeholder="Enter your delivery address"
-          value={formData.address}
-          onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-          required
-          className="h-24"
+        <AddressInput
+          type="DELIVERY"
+          onAddressChange={handleAddressChange}
+          initialAddress={formData.address}
         />
       </div>
 

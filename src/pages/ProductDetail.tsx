@@ -1,68 +1,82 @@
-import { useParams } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { Navigation } from "@/components/Navigation";
 import { Footer } from "@/components/Footer";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Heart, ShoppingCart, Share2 } from "lucide-react";
+import { Heart, ShoppingCart, Share2, Trash2, Minus, Plus } from "lucide-react";
 import { useAuth } from "@/lib/AuthContext";
 import { useToast } from "@/components/ui/use-toast";
+import { useQuery } from "@tanstack/react-query";
+import axios from "axios";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useCart } from "@/lib/CartContext";
 
-// This would typically come from an API
-const allArtworks = [
-  {
-    id: 1,
-    title: "Ocean Dreams",
-    artist: "Sarah Chen",
-    price: 285,
-    category: "abstract",
-    likes: 42,
-    imageGradient: "from-blue-400 to-cyan-300",
-    description: "A mesmerizing piece that captures the essence of ocean waves and their eternal dance. Created using a unique blend of acrylics and metallic pigments.",
-    dimensions: "24\" x 36\"",
-    medium: "Acrylic on Canvas",
-    yearCreated: 2023,
-    artistBio: "Sarah Chen is a contemporary artist known for her abstract seascapes and innovative use of color."
-  },
-  {
-    id: 2,
-    title: "Urban Solitude",
-    artist: "Marcus Rodriguez",
-    price: 450,
-    category: "digital",
-    likes: 67,
-    imageGradient: "from-gray-600 to-gray-400",
-    description: "A digital masterpiece exploring the theme of solitude in modern urban landscapes. Each element tells a story of city life.",
-    dimensions: "Digital Print - Various Sizes Available",
-    medium: "Digital Art",
-    yearCreated: 2023,
-    artistBio: "Marcus Rodriguez is a digital artist who transforms urban scenes into emotional narratives."
-  }
-  // ... other artworks
-];
+interface Product {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  images: string[];
+  isAvailable: boolean;
+  quantity: number;
+  createdAt: string;
+  seller: {
+    id: string;
+    user: {
+      name: string;
+      email: string;
+    }
+  };
+  categories: Array<{
+    id: string;
+    name: string;
+  }>;
+}
 
 const ProductDetail = () => {
   const { id } = useParams();
-  const location = useLocation();
   const navigate = useNavigate();
+  const { addToCart, removeFromCart, isInCart, cart, isLoading: isCartLoading, updateQuantity } = useCart();
   const { user, isProfileComplete, setReturnPath } = useAuth();
   const { toast } = useToast();
-  const artwork = allArtworks.find(art => art.id === Number(id));
 
-  const handleAddToCart = () => {
+  const { data: product, isLoading, error } = useQuery<Product>({
+    queryKey: ['product', id],
+    queryFn: async () => {
+      const response = await axios.get(`http://localhost:3000/api/products/${id}`);
+      return response.data;
+    },
+    enabled: !!id
+  });
+
+  const cartItem = cart?.items.find(item => item.product.id === id);
+
+  const handleCartAction = async () => {
     if (!user) {
       setReturnPath(location.pathname);
       navigate("/signin");
       return;
     }
 
-    // Add to cart logic here
-    console.log("Adding to cart:", artwork?.title);
-    toast({
-      title: "Added to Cart",
-      description: "Item has been added to your cart.",
-      duration: 3000,
-    });
+    if (cartItem) {
+      await removeFromCart(cartItem.id);
+    } else {
+      await addToCart(id!);
+    }
+  };
+
+  const handleQuantityChange = async (itemId: string, currentQuantity: number, change: number) => {
+    const newQuantity = currentQuantity + change;
+    if (newQuantity >= 1 && newQuantity <= (product?.quantity || 0)) {
+      try {
+        await updateQuantity(itemId, newQuantity);
+      } catch (error: any) {
+        toast({
+          title: "Error",
+          description: error.response?.data?.error || "Failed to update quantity",
+          variant: "destructive",
+        });
+      }
+    }
   };
 
   const handleBuyNow = () => {
@@ -78,16 +92,49 @@ const ProductDetail = () => {
     }
 
     // Proceed with purchase logic
-    console.log("Proceeding to checkout:", artwork?.title);
+    console.log("Proceeding to checkout:", product?.name);
   };
 
-  if (!artwork) {
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-skecho-warm-gray/30 to-skecho-coral-light/20">
+        <Navigation />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+            <Skeleton className="aspect-square w-full rounded-lg" />
+            <div className="space-y-8">
+              <div>
+                <Skeleton className="h-10 w-3/4 mb-2" />
+                <Skeleton className="h-6 w-1/2" />
+              </div>
+              <Skeleton className="h-24 w-full" />
+              <div className="grid grid-cols-2 gap-4">
+                {[...Array(4)].map((_, i) => (
+                  <div key={i} className="space-y-2">
+                    <Skeleton className="h-4 w-20" />
+                    <Skeleton className="h-6 w-32" />
+                  </div>
+                ))}
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <Skeleton className="h-12 w-full" />
+                <Skeleton className="h-12 w-full" />
+              </div>
+            </div>
+          </div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (error || !product) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-skecho-warm-gray/30 to-skecho-coral-light/20">
         <Navigation />
         <div className="max-w-7xl mx-auto px-4 py-16 text-center">
           <h1 className="text-2xl font-bold text-gray-900">Artwork not found</h1>
-          <Link to="/browse" className="text-purple-600 hover:text-purple-700 mt-4 inline-block">
+          <Link to="/browse" className="text-skecho-coral hover:text-skecho-coral-dark mt-4 inline-block">
             Return to Browse
           </Link>
         </div>
@@ -104,99 +151,150 @@ const ProductDetail = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
           {/* Artwork Image */}
           <div className="relative">
-            <div className={`aspect-square w-full bg-gradient-to-br ${artwork.imageGradient} rounded-lg shadow-xl`}>
-              <div className="absolute inset-0 bg-black/10"></div>
-            </div>
+            {product.images[0] ? (
+              <img 
+                src={product.images[0]} 
+                alt={product.name}
+                className="w-full aspect-square object-cover rounded-lg shadow-xl"
+              />
+            ) : (
+              <div className="aspect-square w-full bg-gradient-to-br from-gray-200 to-gray-300 rounded-lg shadow-xl">
+                <div className="absolute inset-0 bg-black/10"></div>
+              </div>
+            )}
           </div>
 
           {/* Artwork Details */}
           <div className="space-y-8">
             <div>
-              <h1 className="text-4xl font-bold text-gray-900 mb-2">{artwork.title}</h1>
+              <h1 className="text-4xl font-bold text-gray-900 mb-2">{product.name}</h1>
               <Link 
-                to={`/artist/${artwork.artist.replace(' ', '-').toLowerCase()}`}
-                className="text-xl text-purple-600 hover:text-purple-700 transition-colors"
+                to={`/artist/${product.seller.id}`}
+                className="text-xl text-skecho-coral hover:text-skecho-coral-dark transition-colors"
               >
-                by {artwork.artist}
+                by {product.seller.user.name}
               </Link>
             </div>
 
-            <div className="space-y-4">
-              <p className="text-gray-600 text-lg leading-relaxed">
-                {artwork.description}
-              </p>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <p className="text-sm text-gray-500">Dimensions</p>
-                  <p className="font-medium">{artwork.dimensions}</p>
+            <p className="text-gray-600 text-lg leading-relaxed">
+              {product.description}
+            </p>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <p className="text-sm text-gray-500">Categories</p>
+                <div className="flex flex-wrap gap-2">
+                  {product.categories.map(category => (
+                    <span key={category.id} className="px-3 py-1 bg-gray-100 rounded-full text-sm">
+                      {category.name}
+                    </span>
+                  ))}
                 </div>
-                <div className="space-y-2">
-                  <p className="text-sm text-gray-500">Medium</p>
-                  <p className="font-medium">{artwork.medium}</p>
-                </div>
-                <div className="space-y-2">
-                  <p className="text-sm text-gray-500">Year</p>
-                  <p className="font-medium">{artwork.yearCreated}</p>
-                </div>
-                <div className="space-y-2">
-                  <p className="text-sm text-gray-500">Category</p>
-                  <p className="font-medium capitalize">{artwork.category.replace('-', ' ')}</p>
-                </div>
+              </div>
+              <div className="space-y-2">
+                <p className="text-sm text-gray-500">Listed On</p>
+                <p className="font-medium">
+                  {new Date(product.createdAt).toLocaleDateString()}
+                </p>
               </div>
             </div>
 
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-3xl font-bold text-purple-600">
-                  ${artwork.price}
-                </span>
-                <div className="flex items-center gap-2">
+            <div className="flex items-center justify-between">
+              <span className="text-3xl font-bold text-skecho-coral">
+                ${product.price.toFixed(2)}
+              </span>
+              <div className="flex items-center gap-4">
+                <div className="text-sm text-gray-600">
+                  {product.isAvailable  ? (
+                    <span>{product.quantity} available</span>
+                  ) : (
+                    <span className="text-red-500">Out of stock</span>
+                  )}
+                </div>
+                {/* <div className="flex items-center gap-2">
                   <Button size="icon" variant="outline">
                     <Heart className="w-5 h-5" />
                   </Button>
                   <Button size="icon" variant="outline">
                     <Share2 className="w-5 h-5" />
                   </Button>
-                </div>
+                </div> */}
               </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <Button 
-                  onClick={handleAddToCart}
-                  className="w-full bg-white hover:bg-gray-50 text-purple-600 border-2 border-purple-600"
-                >
-                  <ShoppingCart className="w-5 h-5 mr-2" />
-                  Add to Cart
-                </Button>
-                <Button 
-                  onClick={handleBuyNow}
-                  className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white"
-                >
-                  Buy Now
-                </Button>
-              </div>
-
-              {user && !isProfileComplete && (
-                <p className="text-sm text-gray-500 text-center">
-                  Please complete your profile to proceed with purchase.
-                  <Link 
-                    to="/complete-profile" 
-                    state={{ from: location.pathname }}
-                    className="text-purple-600 hover:text-purple-700 ml-1"
+            </div>
+            
+            {product.isAvailable && product.quantity > 0 ? (
+              <div className="mt-8 space-y-4">
+                {cartItem ? (
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2">
+                      <Button 
+                        size="icon" 
+                        variant="outline"
+                        onClick={() => handleCartAction()}
+                        className="bg-red-50 hover:bg-red-100 border-red-200"
+                      >
+                        <Trash2 className="w-4 h-4 text-red-500" />
+                      </Button>
+                      <div className="flex items-center gap-2">
+                        <Button 
+                          size="icon" 
+                          variant="outline"
+                          onClick={() => handleQuantityChange(cartItem.id, cartItem.quantity, -1)}
+                          disabled={cartItem.quantity <= 1}
+                        >
+                          <Minus className="w-4 h-4" />
+                        </Button>
+                        <span className="w-8 text-center">{cartItem.quantity}</span>
+                        <Button 
+                          size="icon" 
+                          variant="outline"
+                          onClick={() => handleQuantityChange(cartItem.id, cartItem.quantity, 1)}
+                          disabled={cartItem.quantity >= product.quantity}
+                        >
+                          <Plus className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                    <Button 
+                      onClick={handleBuyNow}
+                      className="flex-1 bg-skecho-coral hover:bg-skecho-coral-dark text-white"
+                    >
+                      Buy Now
+                    </Button>
+                  </div>
+                ) : (
+                  <Button 
+                    onClick={handleCartAction} 
+                    className="w-full bg-skecho-coral hover:bg-skecho-coral-dark text-white"
+                    disabled={!product.isAvailable || product.quantity === 0}
                   >
-                    Complete Profile
-                  </Link>
-                </p>
-              )}
-            </div>
+                    Add to Cart
+                  </Button>
+                )}
+              </div>
+            ) : (
+              <div className="mt-8">
+                <Button 
+                  disabled
+                  className="w-full"
+                >
+                  {product.quantity === 0 ? 'Out of Stock' : 'Not Available'}
+                </Button>
+              </div>
+            )}
 
-            <div className="border-t pt-8">
-              <h2 className="text-xl font-semibold mb-4">About the Artist</h2>
-              <p className="text-gray-600">
-                {artwork.artistBio}
+            {user && !isProfileComplete && (
+              <p className="text-sm text-gray-500 text-center">
+                Please complete your profile to proceed with purchase.
+                <Link 
+                  to="/complete-profile" 
+                  state={{ from: location.pathname }}
+                  className="text-skecho-coral hover:text-skecho-coral-dark ml-1"
+                >
+                  Complete Profile
+                </Link>
               </p>
-            </div>
+            )}
           </div>
         </div>
       </div>

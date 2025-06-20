@@ -2,8 +2,6 @@ import { Button } from "@/components/ui/button";
 import { User, ShoppingCart, Search, LogOut, Palette } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/lib/AuthContext";
-import { auth } from "@/lib/firebase";
-import { signOut } from "firebase/auth";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,14 +9,16 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useCart } from "@/lib/CartContext";
 
 export const Navigation = () => {
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
+  const { totalItems } = useCart();
   const navigate = useNavigate();
 
   const handleSignOut = async () => {
     try {
-      await signOut(auth);
+      await signOut();
       navigate("/");
     } catch (error) {
       console.error("Error signing out:", error);
@@ -59,20 +59,24 @@ export const Navigation = () => {
             <Link to="/artists" className="text-gray-700 hover:text-skecho-coral-dark transition-colors">
               Artists
             </Link>
-            <Link to="/custom" className="text-gray-700 hover:text-skecho-coral-dark transition-colors">
-              Custom Art
-            </Link>
+
           </div>
 
           {/* Action Buttons */}
           <div className="flex items-center space-x-4">
-            <Button variant="ghost" size="sm" className="relative hover:bg-skecho-coral-light/50">
-              <ShoppingCart className="w-5 h-5" />
-              <span className="absolute -top-2 -right-2 bg-skecho-coral text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                3
-              </span>
-            </Button>
-            
+            <div className="relative">
+              <Link to="/cart">
+                <Button variant="ghost" size="icon" className="relative">
+                  <ShoppingCart className="h-5 w-5" />
+                  {totalItems > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-skecho-coral text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                      {totalItems}
+                    </span>
+                  )}
+                </Button>
+              </Link>
+            </div>
+
             {user ? (
               <div className="flex items-center space-x-4">
                 <DropdownMenu>
@@ -85,10 +89,17 @@ export const Navigation = () => {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-48">
-                    <DropdownMenuItem>
+                    {location.pathname != "/dashboard" && <DropdownMenuItem>
                       <Link to="/dashboard" className="flex items-center w-full">
                         <Palette className="w-4 h-4 mr-2" />
                         Switch to Seller
+                      </Link>
+                    </DropdownMenuItem>}
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem>
+                      <Link to="/edit-profile" className="flex items-center w-full">
+                        <User className="w-4 h-4 mr-2" />
+                        Profile
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
@@ -96,6 +107,7 @@ export const Navigation = () => {
                       <LogOut className="w-4 h-4 mr-2" />
                       Sign Out
                     </DropdownMenuItem>
+
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>

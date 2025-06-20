@@ -15,7 +15,7 @@ import {
   Eye
 } from "lucide-react";
 import { useAuth } from "@/lib/AuthContext";
-import { Navigate, Link } from "react-router-dom";
+import { Navigate, Link, useNavigate } from "react-router-dom";
 import {
   Table,
   TableBody,
@@ -24,53 +24,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-
-// Mock data - would come from API in production
-const mockProducts = [
-  {
-    id: 1,
-    title: "Ocean Dreams",
-    price: 285,
-    status: "available",
-    likes: 42,
-    views: 156
-  },
-  {
-    id: 2,
-    title: "Urban Solitude",
-    price: 450,
-    status: "sold",
-    likes: 67,
-    views: 234
-  },
-  {
-    id: 3,
-    title: "Mystic Forest",
-    price: 375,
-    status: "available",
-    likes: 28,
-    views: 112
-  }
-];
-
-const mockOrders = [
-  {
-    id: "ORD-001",
-    product: "Ocean Dreams",
-    customer: "John Doe",
-    date: "2024-03-15",
-    status: "Delivered",
-    amount: 285
-  },
-  {
-    id: "ORD-002",
-    product: "Urban Solitude",
-    customer: "Jane Smith",
-    date: "2024-03-14",
-    status: "Processing",
-    amount: 450
-  }
-];
+import { useQuery } from "@tanstack/react-query";
+import axios from "axios";
+import { log } from "console";
+import { useState } from "react";
+import { useToast } from "@/components/ui/use-toast";
+import { Dialog ,DialogContent,DialogHeader,DialogTitle} from "@/components/ui/dialog"
 
 const StatCard = ({ title, value, icon: Icon, trend }: any) => (
   <Card>
@@ -91,17 +50,74 @@ const StatCard = ({ title, value, icon: Icon, trend }: any) => (
 );
 
 const SellerDashboard = () => {
-  const { user, isProfileComplete } = useAuth();
+  const { user, isSellerProfileComplete ,loading} = useAuth();
+  const { toast } = useToast();
+  const navigate = useNavigate();
+  const [deletingProductId, setDeletingProductId] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  
+  // Fetch seller profile and products
+  const { data: sellerProfiles, isLoading, error } = useQuery({
+    queryKey: ["sellerProfile"],
+    queryFn: async () => {
+      const idToken = await user?.getIdToken();
+      const res = await axios.get(
+        "http://localhost:3000/api/seller",
+        {
+          headers: {
+            Authorization: `Bearer ${idToken}`,
+          },
+        }
+      );
+      
+      console.log("Seller profile data:", res.data);
+      return res.data;
+    },
+    enabled: !!user,
+  });
 
-  // Redirect if not authenticated
+  if(loading){
+    console.log("loading is true");
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-lg text-gray-600">Loading dashboard...</div>
+      </div>
+    );
+  }
+  // Redirect if authenticated
   if (!user) {
     return <Navigate to="/signin" replace />;
   }
 
-  // Redirect if profile not complete
-  // if (!isProfileComplete) {
-  //   return <Navigate to="/complete-profile" state={{ from: "/dashboard" }} replace />;
-  // }
+  // Redirect if seller profile not complete
+  if (!isSellerProfileComplete && !loading) {
+    console.log("seller profile not complete");
+    return <Navigate to="/complete-seller-profile" state={{ from: "/dashboard" }} replace />;
+    // return (
+    //   <div className="min-h-screen flex items-center justify-center">
+    //     <div className="text-lg text-gray-600">Seller profile not complete</div>
+    //   </div>
+    // );
+  }
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-lg text-gray-600">Loading dashboard...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-lg text-red-600">Failed to load dashboard. Please try again later.</div>
+      </div>
+    );
+  }
+  // Extract products from seller profile
+  const sellerProfile= sellerProfiles?.[0];
+  const products = sellerProfile?.products || [];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-skecho-warm-gray/30 to-skecho-coral-light/20">
@@ -113,38 +129,23 @@ const SellerDashboard = () => {
             <h1 className="text-3xl font-bold text-gray-900">Seller Dashboard</h1>
             <p className="text-gray-600">Manage your artworks and track your sales</p>
           </div>
-          <Button className="bg-skecho-coral hover:bg-skecho-coral-dark">
-            <Plus className="w-4 h-4 mr-2" />
-            Add New Artwork
-          </Button>
+          <Link to="/add-product">
+            <Button className="bg-skecho-coral hover:bg-skecho-coral-dark">
+              <Plus className="w-4 h-4 mr-2" />
+              Add New Artwork
+            </Button>
+          </Link>
         </div>
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           <StatCard
-            title="Total Sales"
-            value="$2,850"
-            icon={DollarSign}
-            trend="+12.5%"
-          />
-          <StatCard
-            title="Active Listings"
-            value="8"
+            title="Total Artworks"
+            value={products.length}
             icon={Package}
-            trend="+2"
+            trend={undefined}
           />
-          <StatCard
-            title="Total Orders"
-            value="24"
-            icon={ShoppingBag}
-            trend="+8.1%"
-          />
-          <StatCard
-            title="Profile Views"
-            value="1.2k"
-            icon={Users}
-            trend="+28.4%"
-          />
+          {/* You can add more stats here if you have them */}
         </div>
 
         <Tabs defaultValue="products" className="space-y-6">
@@ -163,83 +164,88 @@ const SellerDashboard = () => {
                       <TableHead>Title</TableHead>
                       <TableHead>Price</TableHead>
                       <TableHead>Status</TableHead>
-                      <TableHead>Likes</TableHead>
-                      <TableHead>Views</TableHead>
                       <TableHead>Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {mockProducts.map((product) => (
-                      <TableRow key={product.id}>
-                        <TableCell className="font-medium">{product.title}</TableCell>
-                        <TableCell>${product.price}</TableCell>
-                        <TableCell>
-                          <span className={`px-2 py-1 rounded-full text-xs ${
-                            product.status === 'available' 
-                              ? 'bg-green-100 text-green-700' 
-                              : 'bg-purple-100 text-purple-700'
-                          }`}>
-                            {product.status}
-                          </span>
-                        </TableCell>
-                        <TableCell>{product.likes}</TableCell>
-                        <TableCell>{product.views}</TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <Button size="sm" variant="ghost">
-                              <Eye className="w-4 h-4" />
-                            </Button>
-                            <Button size="sm" variant="ghost">
-                              <Edit className="w-4 h-4" />
-                            </Button>
-                            <Button size="sm" variant="ghost" className="text-red-600 hover:text-red-700">
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          </div>
+                    {products.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={4} className="text-center text-gray-500">
+                          No products found.
                         </TableCell>
                       </TableRow>
-                    ))}
+                    ) : (
+                      products.map((product: any) => (
+                        <TableRow key={product.id}>
+                          <TableCell className="font-medium">{product.name}</TableCell>
+                          <TableCell>${product.price}</TableCell>
+                          <TableCell>
+                            <span className={`px-2 py-1 rounded-full text-xs ${
+                              product.isAvailable
+                                ? 'bg-green-100 text-green-700'
+                                : 'bg-purple-100 text-purple-700'
+                            }`}>
+                              {product.isAvailable ? 'available' : 'sold'}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              {/* Edit Button */}
+                              <Button size="sm" variant="ghost" onClick={() => navigate(`/edit-product/${product.id}`)}>
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                              {/* Delete Button */}
+                              <Button size="sm" variant="ghost" className="text-red-600 hover:text-red-700" onClick={() => setDeletingProductId(product.id)}>
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
                   </TableBody>
                 </Table>
               </CardContent>
             </Card>
+            {/* Delete Confirmation Dialog */}
+            <Dialog open={!!deletingProductId} onOpenChange={() => setDeletingProductId(null)}>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Delete Product</DialogTitle>
+                </DialogHeader>
+                <div>Are you sure you want to delete this product?</div>
+                <div className="flex justify-end gap-2 mt-4">
+                  <Button variant="ghost" onClick={() => setDeletingProductId(null)} disabled={isDeleting}>Cancel</Button>
+                  <Button variant="destructive" onClick={async () => {
+                    if (!deletingProductId) return;
+                    setIsDeleting(true);
+                    try {
+                      const idToken = await user?.getIdToken();
+                      await axios.delete(`http://localhost:3000/api/products/${deletingProductId}`, {
+                        headers: { Authorization: `Bearer ${idToken}` },
+                      });
+                      toast({ title: "Product deleted" });
+                      setDeletingProductId(null);
+                      // Optionally refetch products here
+                    } catch (err) {
+                      toast({ title: "Failed to delete product", variant: "destructive" });
+                    } finally {
+                      setIsDeleting(false);
+                    }
+                  }} disabled={isDeleting}>
+                    {isDeleting ? "Deleting..." : "Delete"}
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
           </TabsContent>
 
           <TabsContent value="orders" className="space-y-4">
             <Card>
               <CardContent className="p-6">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Order ID</TableHead>
-                      <TableHead>Product</TableHead>
-                      <TableHead>Customer</TableHead>
-                      <TableHead>Date</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Amount</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {mockOrders.map((order) => (
-                      <TableRow key={order.id}>
-                        <TableCell className="font-medium">{order.id}</TableCell>
-                        <TableCell>{order.product}</TableCell>
-                        <TableCell>{order.customer}</TableCell>
-                        <TableCell>{order.date}</TableCell>
-                        <TableCell>
-                          <span className={`px-2 py-1 rounded-full text-xs ${
-                            order.status === 'Delivered' 
-                              ? 'bg-green-100 text-green-700' 
-                              : 'bg-blue-100 text-blue-700'
-                          }`}>
-                            {order.status}
-                          </span>
-                        </TableCell>
-                        <TableCell>${order.amount}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                <div className="text-center text-gray-500 py-8">
+                  Orders functionality coming soon.
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
@@ -257,7 +263,6 @@ const SellerDashboard = () => {
           </TabsContent>
         </Tabs>
       </div>
-      
       <Footer />
     </div>
   );

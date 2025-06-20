@@ -1,133 +1,122 @@
-
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Heart, ShoppingCart } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import axios from "axios";
+import { Skeleton } from "@/components/ui/skeleton";
 
-const featuredArtworks = [
-  {
-    id: 1,
-    title: "Ocean Dreams",
-    artist: "Sarah Chen",
-    price: 285,
-    category: "Abstract",
-    likes: 42,
-    imageGradient: "from-blue-400 to-cyan-300"
-  },
-  {
-    id: 2,
-    title: "Urban Solitude",
-    artist: "Marcus Rodriguez",
-    price: 450,
-    category: "Digital",
-    likes: 67,
-    imageGradient: "from-gray-600 to-gray-400"
-  },
-  {
-    id: 3,
-    title: "Wildflower Symphony",
-    artist: "Emma Thompson",
-    price: 320,
-    category: "Oil Painting",
-    likes: 89,
-    imageGradient: "from-pink-400 to-yellow-300"
-  },
-  {
-    id: 4,
-    title: "Cosmic Dance",
-    artist: "Alex Kim",
-    price: 380,
-    category: "Mixed Media",
-    likes: 124,
-    imageGradient: "from-skecho-coral to-skecho-coral-dark"
-  },
-  {
-    id: 5,
-    title: "Forest Whispers",
-    artist: "Maya Patel",
-    price: 295,
-    category: "Watercolor",
-    likes: 76,
-    imageGradient: "from-green-400 to-emerald-300"
-  },
-  {
-    id: 6,
-    title: "City Lights",
-    artist: "David Wilson",
-    price: 520,
-    category: "Photography",
-    likes: 93,
-    imageGradient: "from-orange-400 to-skecho-coral"
-  }
-];
+interface Product {
+  id: string;
+  name: string;
+  price: number;
+  images: string[];
+  seller: {
+    user: {
+      name: string;
+    }
+  };
+  categories: Array<{
+    id: string;
+    name: string;
+  }>;
+}
 
 export const FeaturedArtworks = () => {
+  const { data, isLoading, error } = useQuery<{ products: Product[] }>({
+    queryKey: ['featuredProducts'],
+    queryFn: async () => {
+      console.log('Fetching products...');
+      const response = await axios.get('http://localhost:3000/api/products');
+      console.log('Products response:', response.data);
+      return response.data;
+    }
+  });
+
+  // Add debugging logs
+  console.log('Component state:', { products: data?.products, isLoading, error });
+
+  if (error) {
+    console.error('Error loading featured products:', error);
+    return (
+      <div className="py-16 text-center text-gray-600">
+        Failed to load featured artworks. Please try again later.
+      </div>
+    );
+  }
+
+  // Add null check for products
+  if (!isLoading && (!data?.products || data.products.length === 0)) {
+    return (
+      <div className="py-16 text-center text-gray-600">
+        No artworks available at the moment.
+      </div>
+    );
+  }
+
   return (
-    <section className="py-20 px-4">
+    <section className="py-16 px-4">
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-12">
-          <h2 className="text-4xl font-bold mb-4 text-skecho-charcoal">Featured Artworks</h2>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            Discover exceptional pieces from our most talented artists
+          <h2 className="text-4xl font-bold mb-4">Featured Artworks</h2>
+          <p className="text-xl text-gray-600">
+            Discover our latest and most exceptional pieces
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
-          {featuredArtworks.map((artwork) => (
-            <Card key={artwork.id} className="group overflow-hidden hover:shadow-xl transition-all duration-300 border-0 bg-white/50 backdrop-blur-sm">
-              <div className="relative">
-                <div className={`h-64 bg-gradient-to-br ${artwork.imageGradient} relative overflow-hidden`}>
-                  <div className="absolute inset-0 bg-black/10 group-hover:bg-black/5 transition-all duration-300"></div>
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-white/90 hover:bg-white"
-                  >
-                    <Heart className="w-4 h-4" />
-                  </Button>
-                </div>
-              </div>
-              
-              <CardContent className="p-6">
-                <div className="space-y-3">
-                  <div>
-                    <Link to={`/artwork/${artwork.id}`}>
-                      <h3 className="text-xl font-semibold hover:text-skecho-coral-dark transition-colors cursor-pointer">
-                        {artwork.title}
-                      </h3>
-                    </Link>
-                    <Link to={`/artist/${artwork.artist.replace(' ', '-').toLowerCase()}`}>
-                      <p className="text-gray-600 hover:text-skecho-coral-dark transition-colors cursor-pointer">
-                        by {artwork.artist}
-                      </p>
-                    </Link>
+        {isLoading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+            {[...Array(6)].map((_, index) => (
+              <Card key={index} className="overflow-hidden">
+                <CardContent className="p-0">
+                  <Skeleton className="w-full h-64" />
+                  <div className="p-6">
+                    <Skeleton className="h-6 w-3/4 mb-2" />
+                    <Skeleton className="h-4 w-1/2 mb-4" />
+                    <Skeleton className="h-8 w-full" />
                   </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm bg-skecho-coral-light text-skecho-coral-dark px-3 py-1 rounded-full">
-                      {artwork.category}
-                    </span>
-                    <span className="text-sm text-gray-500 flex items-center gap-1">
-                      <Heart className="w-4 h-4" /> {artwork.likes}
-                    </span>
-                  </div>
-                  
-                  <div className="flex items-center justify-between pt-2">
-                    <span className="text-2xl font-bold text-skecho-coral">
-                      ${artwork.price}
-                    </span>
-                    <Button size="sm" className="bg-skecho-coral hover:bg-skecho-coral-dark text-white">
-                      <ShoppingCart className="w-4 h-4 mr-2" />
-                      Add to Cart
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+            {data?.products.slice(0, 6).map((product) => (
+              <Card key={product.id} className="overflow-hidden group">
+                <CardContent className="p-0">
+                  <Link to={`/artwork/${product.id}`}>
+                    <div className="relative h-64 bg-gradient-to-br from-gray-200 to-gray-300 overflow-hidden">
+                      {product.images[0] && (
+                        <img
+                          src={product.images[0]}
+                          alt={product.name}
+                          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                        />
+                      )}
+                    </div>
+                    <div className="p-6">
+                      <h3 className="text-xl font-semibold mb-2">{product.name}</h3>
+                      <p className="text-gray-600 mb-4">by {product.seller.user.name}</p>
+                      <div className="flex items-center justify-between">
+                        <span className="text-lg font-bold">${product.price.toFixed(2)}</span>
+                        <div className="space-x-2">
+                          <Button size="icon" variant="ghost">
+                            <Heart className="w-5 h-5" />
+                          </Button>
+                          <Button size="icon">
+                            <ShoppingCart className="w-5 h-5" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </Link>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
 
-        <div className="text-center">
+        <div className="text-center mt-12">
           <Link to="/browse">
             <Button size="lg" variant="outline" className="border-skecho-coral text-skecho-coral-dark hover:bg-skecho-coral-light/30">
               View All Artworks

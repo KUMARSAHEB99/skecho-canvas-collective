@@ -1,106 +1,150 @@
-
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { User } from "lucide-react";
 import { Link } from "react-router-dom";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useQuery } from "@tanstack/react-query";
+import axios from "axios";
 
-const spotlightArtists = [
-  {
-    id: 1,
-    name: "Sarah Chen",
-    bio: "Abstract expressionist with a passion for ocean-inspired themes",
-    categories: ["Abstract", "Acrylic", "Large Format"],
-    artworksCount: 24,
-    followers: 1250,
-    avatarGradient: "from-blue-400 to-purple-400"
-  },
-  {
-    id: 2,
-    name: "Marcus Rodriguez",
-    bio: "Digital artist creating surreal urban landscapes",
-    categories: ["Digital", "Illustration", "Concept Art"],
-    artworksCount: 18,
-    followers: 890,
-    avatarGradient: "from-orange-400 to-red-400"
-  },
-  {
-    id: 3,
-    name: "Emma Thompson",
-    bio: "Traditional oil painter specializing in botanical subjects",
-    categories: ["Oil Painting", "Botanical", "Realism"],
-    artworksCount: 31,
-    followers: 2100,
-    avatarGradient: "from-green-400 to-teal-400"
-  }
-];
+interface Artist {
+  id: string;
+  user: {
+    name: string;
+    createdAt: string;
+  };
+  products: Array<{
+    id: string;
+    name: string;
+    price: number;
+    images: string[];
+    categories: Array<{
+      id: string;
+      name: string;
+    }>;
+  }>;
+  _count: {
+    products: number;
+  };
+}
 
 export const ArtistSpotlight = () => {
-  return (
-    <section className="py-20 px-4 bg-white/30">
-      <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-12">
-          <h2 className="text-4xl font-bold mb-4">Artist Spotlight</h2>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            Meet the talented artists making waves in our community
-          </p>
-        </div>
+  const { data: artists, isLoading, error } = useQuery<Artist[]>({
+    queryKey: ["spotlightArtists"],
+    queryFn: async () => {
+      const response = await axios.get("http://localhost:3000/api/seller");
+      return response.data;
+    },
+  });
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
-          {spotlightArtists.map((artist) => (
-            <Card key={artist.id} className="text-center hover:shadow-xl transition-all duration-300 border-0 bg-white/70 backdrop-blur-sm">
-              <CardContent className="p-8">
-                <div className="space-y-4">
-                  <div className="relative mx-auto w-24 h-24">
-                    <div className={`w-full h-full bg-gradient-to-br ${artist.avatarGradient} rounded-full flex items-center justify-center`}>
-                      <User className="w-12 h-12 text-white" />
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <Link to={`/artist/${artist.name.replace(' ', '-').toLowerCase()}`}>
-                      <h3 className="text-xl font-semibold hover:text-purple-600 transition-colors cursor-pointer">
-                        {artist.name}
-                      </h3>
-                    </Link>
-                    <p className="text-gray-600 mt-2 text-sm leading-relaxed">
-                      {artist.bio}
-                    </p>
-                  </div>
-
-                  <div className="flex flex-wrap gap-2 justify-center">
-                    {artist.categories.map((category) => (
-                      <Badge key={category} variant="secondary" className="bg-purple-100 text-purple-700 hover:bg-purple-200">
-                        {category}
-                      </Badge>
-                    ))}
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4 pt-4">
-                    <div>
-                      <div className="text-2xl font-bold text-purple-600">{artist.artworksCount}</div>
-                      <div className="text-sm text-gray-600">Artworks</div>
-                    </div>
-                    <div>
-                      <div className="text-2xl font-bold text-purple-600">{artist.followers.toLocaleString()}</div>
-                      <div className="text-sm text-gray-600">Followers</div>
-                    </div>
-                  </div>
-
-                  <Link to={`/artist/${artist.name.replace(' ', '-').toLowerCase()}`}>
-                    <Button variant="outline" className="w-full border-purple-200 hover:bg-purple-50">
-                      View Profile
-                    </Button>
-                  </Link>
+  const renderSkeletons = () => (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
+      {[...Array(6)].map((_, index) => (
+        <Card key={index} className="group overflow-hidden hover:shadow-xl transition-all duration-300 border-0 bg-white/50 backdrop-blur-sm">
+          <CardContent className="p-6">
+            <div className="space-y-6">
+              <div className="flex items-center gap-4">
+                <Skeleton className="w-16 h-16 rounded-full" />
+                <div className="flex-1">
+                  <Skeleton className="h-6 w-32 mb-2" />
+                  <Skeleton className="h-4 w-24" />
                 </div>
-              </CardContent>
-            </Card>
-          ))}
+              </div>
+              <Skeleton className="h-4 w-full mb-4" />
+              <div className="grid grid-cols-2 gap-4 pt-4">
+                <Skeleton className="h-8" />
+                <Skeleton className="h-8" />
+              </div>
+              <Skeleton className="h-10 w-full" />
+            </div>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  );
+
+  if (error) {
+    return (
+      <section className="py-16 bg-gradient-to-br from-skecho-warm-gray/30 to-skecho-coral-light/20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h2 className="text-3xl font-bold text-gray-900 mb-4">Featured Artists</h2>
+          <p className="text-lg text-gray-600 mb-8">Failed to load artists. Please try again later.</p>
         </div>
+      </section>
+    );
+  }
+
+  return (
+    <section className="py-16 bg-gradient-to-br from-skecho-warm-gray/30 to-skecho-coral-light/20">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="text-center mb-12">
+          <h2 className="text-3xl font-bold text-gray-900 mb-4">Featured Artists</h2>
+          <p className="text-lg text-gray-600">Discover talented artists in our community</p>
+        </div>
+
+        {isLoading ? (
+          renderSkeletons()
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
+            {artists?.slice(0, 6).map((artist) => (
+              <Card key={artist.id} className="group overflow-hidden hover:shadow-xl transition-all duration-300 border-0 bg-white/50 backdrop-blur-sm">
+                <CardContent className="p-6">
+                  <div className="space-y-6">
+                    <div className="flex items-center gap-4">
+                      <div className="w-16 h-16 rounded-full bg-gradient-to-br from-skecho-coral to-skecho-coral-dark flex items-center justify-center overflow-hidden">
+                        {artist.profileImage ? (
+                          <img
+                            src={artist.profileImage}
+                            alt={`${artist.user.name}'s profile`}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <User className="w-8 h-8 text-white" />
+                        )}
+                      </div>
+                      <div>
+                        <h3 className="text-xl font-semibold text-gray-900">{artist.user.name}</h3>
+                        <p className="text-gray-600">Member since {new Date(artist.user.createdAt).toLocaleDateString()}</p>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap gap-2">
+                      {Array.from(new Set(artist.products.flatMap(p => p.categories.map(c => c.name)))).map((category) => (
+                        <span
+                          key={category}
+                          className="px-3 py-1 bg-skecho-coral/10 text-skecho-coral-dark rounded-full text-sm"
+                        >
+                          {category}
+                        </span>
+                      ))}
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4 pt-4">
+                      <div>
+                        <div className="text-2xl font-bold text-skecho-coral">{artist.products.length}</div>
+                        <div className="text-sm text-gray-600">Artworks</div>
+                      </div>
+                      <div>
+                        <div className="text-2xl font-bold text-skecho-coral">{artist._count.products}</div>
+                        <div className="text-sm text-gray-600">Total Products</div>
+                      </div>
+                    </div>
+
+                    <Link to={`/artist/${artist.id}`}>
+                      <Button variant="outline" className="w-full border-skecho-coral/20 hover:bg-skecho-coral/10">
+                        View Profile
+                      </Button>
+                    </Link>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
 
         <div className="text-center">
-          <Link to="/artists">
-            <Button size="lg" variant="outline" className="border-purple-200 hover:bg-purple-50">
+          <Link to="/browse">
+            <Button size="lg" variant="outline" className="border-skecho-coral/20 hover:bg-skecho-coral/10">
               Discover More Artists
             </Button>
           </Link>
