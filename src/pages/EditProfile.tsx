@@ -3,6 +3,8 @@ import { CompleteProfileForm } from "@/components/CompleteProfileForm";
 import { SellerProfileForm } from "@/components/SellerProfileForm";
 import { useEffect, useState } from "react";
 import axios from "axios";
+import { Navigation } from "@/components/Navigation";
+import { Footer } from "@/components/Footer";
 
 const EditProfile = () => {
   const { user } = useAuth();
@@ -40,25 +42,29 @@ const EditProfile = () => {
   }
 
   return (
-    <div className="max-w-2xl mx-auto py-12 px-4">
-      <h1 className="text-2xl font-bold mb-6">Edit Profile</h1>
-      <section className="mb-10">
-        <h2 className="text-xl font-semibold mb-4">User Profile</h2>
-        <CompleteProfileForm
-          initialValues={userProfile}
-          showSkip={false}
-          redirectPath="/edit-profile"
-        />
-      </section>
-      {sellerProfile && (
-        <section>
-          <h2 className="text-xl font-semibold mb-4">Seller Profile</h2>
-          <SellerProfileForm
-            initialValues={sellerProfile}
+    <div className="min-h-screen bg-gradient-to-br from-skecho-warm-gray/30 to-skecho-coral-light/20">
+      <Navigation />
+      <div className="max-w-2xl mx-auto py-12 px-4">
+        <h1 className="text-2xl font-bold mb-6">Edit Profile</h1>
+        <section className="mb-10 p-8 bg-white/70 backdrop-blur-sm rounded-lg shadow-xl">
+          <h2 className="text-xl font-semibold mb-4">User Profile</h2>
+          <CompleteProfileForm
+            initialValues={userProfile}
+            showSkip={false}
             redirectPath="/edit-profile"
           />
         </section>
-      )}
+        {sellerProfile && (
+          <section className="p-8 bg-white/70 backdrop-blur-sm rounded-lg shadow-xl">
+            <h2 className="text-xl font-semibold mb-4">Seller Profile</h2>
+            <SellerProfileForm
+              initialValues={sellerProfile}
+              redirectPath="/edit-profile"
+            />
+          </section>
+        )}
+      </div>
+      <Footer />
     </div>
   );
 };

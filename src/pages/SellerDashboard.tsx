@@ -24,7 +24,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { log } from "console";
 import { useState } from "react";
@@ -53,6 +53,7 @@ const SellerDashboard = () => {
   const { user, isSellerProfileComplete ,loading} = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [deletingProductId, setDeletingProductId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   
@@ -226,7 +227,8 @@ const SellerDashboard = () => {
                       });
                       toast({ title: "Product deleted" });
                       setDeletingProductId(null);
-                      // Optionally refetch products here
+                      // Invalidate and refetch
+                      queryClient.invalidateQueries({ queryKey: ['sellerProfile'] });
                     } catch (err) {
                       toast({ title: "Failed to delete product", variant: "destructive" });
                     } finally {

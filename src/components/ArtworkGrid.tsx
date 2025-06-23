@@ -6,6 +6,7 @@ import { useCart } from "@/lib/CartContext";
 import { useAuth } from "@/lib/AuthContext";
 import { Skeleton } from "@/components/ui/skeleton";
 
+
 interface Product {
   id: string;
   name: string;
@@ -109,7 +110,9 @@ export const ArtworkGrid = ({ products, isLoading }: ArtworkGridProps) => {
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300" />
+                    <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
+                      <span className="text-gray-500">No Image</span>
+                    </div>
                   )}
                   <div className="absolute inset-0 bg-black/10 group-hover:bg-black/5 transition-all duration-300"></div>
                 </div>

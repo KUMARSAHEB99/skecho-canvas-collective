@@ -9,6 +9,8 @@ import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCart } from "@/lib/CartContext";
+import { Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext } from "@/components/ui/carousel";
+
 
 interface Product {
   id: string;
@@ -151,15 +153,25 @@ const ProductDetail = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
           {/* Artwork Image */}
           <div className="relative">
-            {product.images[0] ? (
-              <img 
-                src={product.images[0]} 
-                alt={product.name}
-                className="w-full aspect-square object-cover rounded-lg shadow-xl"
-              />
+            {product.images && product.images.length > 0 ? (
+              <Carousel className="w-full">
+                <CarouselContent>
+                  {product.images.map((img, idx) => (
+                    <CarouselItem key={idx}>
+                      <img
+                        src={img}
+                        alt={product.name + ' image ' + (idx + 1)}
+                        className="w-full aspect-square object-cover rounded-lg shadow-xl"
+                      />
+                    </CarouselItem>
+                  ))}
+                </CarouselContent>
+                <CarouselPrevious />
+                <CarouselNext />
+              </Carousel>
             ) : (
-              <div className="aspect-square w-full bg-gradient-to-br from-gray-200 to-gray-300 rounded-lg shadow-xl">
-                <div className="absolute inset-0 bg-black/10"></div>
+              <div className="aspect-square w-full bg-gradient-to-br from-gray-200 to-gray-300 rounded-lg shadow-xl flex items-center justify-center">
+                <span className="text-gray-500">No Image</span>
               </div>
             )}
           </div>

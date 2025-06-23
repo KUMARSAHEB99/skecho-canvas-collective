@@ -11,27 +11,42 @@ interface CompleteProfileFormProps {
   onSkip?: () => void;
   redirectPath?: string;
   showSkip?: boolean;
+  initialValues?:any;
 }
 
 export const CompleteProfileForm = ({ 
   onSkip, 
   redirectPath = "/", 
-  showSkip = true 
+  showSkip = true ,
+  initialValues
 }: CompleteProfileFormProps) => {
+  console.log("initial vals",initialValues);
+  
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user,checkProfileCompletion } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const getInitialAddress = () => {
+    if (initialValues?.addresses && initialValues.addresses.length > 0) {
+      const deliveryAddress = initialValues.addresses.find(
+        (addr: any) => addr.type === 'DELIVERY'
+      );
+      return deliveryAddress || null;
+    }
+    return null;
+  };
+
   const [formData, setFormData] = useState({
-    phoneNumber: "",
-    address: {
+    phoneNumber: initialValues?.phone || "",
+    address: getInitialAddress() || {
       pincode: "",
       addressLine1: "",
       addressLine2: "",
       city: "",
       state: "",
-      country: "India"
-    }
+      country: "India",
+    },
   });
 
   const handleAddressChange = (address: any) => {
@@ -60,7 +75,7 @@ export const CompleteProfileForm = ({
           },
         }
       );
-      await checkProfileCompletion();
+      await checkProfileCompletion(user);
       toast({
         title: "Profile Updated",
         description: "Your profile has been successfully completed.",

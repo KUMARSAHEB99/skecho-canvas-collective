@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -23,6 +23,10 @@ import { User } from "lucide-react";
 interface Seller {
   id: string;
   profileImage: string | null;
+  portfolioImages: string[];
+  doesCustomArt: boolean;
+  customArtPricing: any;
+  materialOptions: any;
   user: {
     name: string;
     email: string;
@@ -41,48 +45,56 @@ interface Seller {
   }>;
 }
 
-const CustomArtRequestForm = ({ artistName, artistEmail }: { artistName: string; artistEmail: string }) => {
+const CustomArtRequestForm = ({
+  artistName,
+  artistEmail,
+  pricing,
+  materials,
+}: {
+  artistName: string;
+  artistEmail: string;
+  pricing: any;
+  materials: any;
+}) => {
   const [formData, setFormData] = useState({
-    name: "",
-    email: "",
+   
     description: "",
-    budget: "",
-    timeline: ""
+    image: null as File | null,
+    material: "",
+    size: "",
+    people: 1,
+    remarks: "",
   });
+  const [totalPrice, setTotalPrice] = useState(0);
+
+  useEffect(() => {
+    if (formData.size && formData.material && formData.people) {
+      const basePrice = pricing[formData.size]?.basePrice || 0;
+      const perPersonPrice = pricing[formData.size]?.perPersonPrice || 0;
+      const materialCost = materials.find((m: any) => m.name === formData.material)?.costs[formData.size] || 0;
+      const calculatedPrice = basePrice + (formData.people > 1 ? (formData.people - 1) * perPersonPrice : 0) + materialCost;
+      setTotalPrice(calculatedPrice);
+    } else {
+      setTotalPrice(0);
+    }
+  }, [formData.size, formData.material, formData.people, pricing, materials]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     // Handle form submission - would typically send to an API
     console.log("Form submitted:", {
       ...formData,
+      totalPrice,
       artistName,
-      artistEmail
+      artistEmail,
     });
     // Add success message or redirect
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="space-y-2">
-        <label htmlFor="name" className="text-sm font-medium">Name</label>
-        <Input
-          id="name"
-          value={formData.name}
-          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-          required
-        />
-      </div>
+    
       
-      <div className="space-y-2">
-        <label htmlFor="email" className="text-sm font-medium">Email</label>
-        <Input
-          id="email"
-          type="email"
-          value={formData.email}
-          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-          required
-        />
-      </div>
 
       <div className="space-y-2">
         <label htmlFor="description" className="text-sm font-medium">Project Description</label>
@@ -97,25 +109,75 @@ const CustomArtRequestForm = ({ artistName, artistEmail }: { artistName: string;
       </div>
 
       <div className="space-y-2">
-        <label htmlFor="budget" className="text-sm font-medium">Budget Range</label>
+        <label htmlFor="image">Reference Image</label>
         <Input
-          id="budget"
-          placeholder="e.g., $500-1000"
-          value={formData.budget}
-          onChange={(e) => setFormData({ ...formData, budget: e.target.value })}
-          required
+          id="image"
+          type="file"
+          onChange={(e) => setFormData({ ...formData, image: e.target.files?.[0] || null })}
         />
       </div>
 
       <div className="space-y-2">
-        <label htmlFor="timeline" className="text-sm font-medium">Desired Timeline</label>
+        <label>Select Options</label>
+        <div className="p-4 border rounded-lg space-y-4">
+          {Object.keys(pricing).map((size) => (
+            <div key={size} className="flex items-center justify-between">
+              <div>
+                <p className="font-semibold">{size}</p>
+                <p className="text-sm text-gray-500">
+                  Base: ${pricing[size].basePrice}, Per Extra Person: ${pricing[size].perPersonPrice}
+                </p>
+              </div>
+              <Button
+                type="button"
+                variant={formData.size === size ? "default" : "outline"}
+                onClick={() => setFormData({ ...formData, size })}
+              >
+                Choose
+              </Button>
+            </div>
+          ))}
+        </div>
+      </div>
+      
+      <div className="space-y-2">
+        <label>Material</label>
+        <div className="flex gap-2">
+          {materials.map((material: any) => (
+            <Button
+              key={material.name}
+              type="button"
+              variant={formData.material === material.name ? "default" : "outline"}
+              onClick={() => setFormData({ ...formData, material: material.name })}
+            >
+              {material.name} (+${material.costs[formData.size] || 0})
+            </Button>
+          ))}
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <label htmlFor="people">Number of People In The Image</label>
         <Input
-          id="timeline"
-          placeholder="e.g., 2-3 weeks"
-          value={formData.timeline}
-          onChange={(e) => setFormData({ ...formData, timeline: e.target.value })}
-          required
+          id="people"
+          type="number"
+          min="1"
+          value={formData.people}
+          onChange={(e) => setFormData({ ...formData, people: parseInt(e.target.value) })}
         />
+      </div>
+
+      <div className="space-y-2">
+        <label htmlFor="remarks">Remarks</label>
+        <Textarea
+          id="remarks"
+          value={formData.remarks}
+          onChange={(e) => setFormData({ ...formData, remarks: e.target.value })}
+        />
+      </div>
+
+      <div className="text-2xl font-bold">
+        Total: ${totalPrice.toFixed(2)}
       </div>
 
       <Button type="submit" className="w-full bg-skecho-coral hover:bg-skecho-coral-dark text-white">
@@ -230,27 +292,49 @@ const ArtistProfile = () => {
 
             <Dialog>
               <DialogTrigger asChild>
-                <Button className="bg-skecho-coral hover:bg-skecho-coral-dark text-white">
+                <Button className="bg-skecho-coral hover:bg-skecho-coral-dark text-white" disabled={!seller.doesCustomArt}>
                   Request Custom Artwork
                 </Button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-[500px]">
+              <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle>Request Custom Artwork</DialogTitle>
                   <DialogDescription>
                     Fill out the form below to request a custom piece from {seller.user.name}.
                   </DialogDescription>
                 </DialogHeader>
-                <CustomArtRequestForm artistName={seller.user.name} artistEmail={seller.user.email} />
+                <CustomArtRequestForm
+                  artistName={seller.user.name}
+                  artistEmail={seller.user.email}
+                  pricing={seller.customArtPricing}
+                  materials={seller.materialOptions}
+                />
               </DialogContent>
             </Dialog>
           </div>
         </div>
 
         {/* Artist Portfolio */}
-        <div className="space-y-6">
-          <h2 className="text-2xl font-bold text-gray-900">Portfolio</h2>
-          
+        {seller.portfolioImages && seller.portfolioImages.length > 0 && (
+          <div className="mb-12">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">Portfolio</h2>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {seller.portfolioImages.map((image, index) => (
+                <div key={index} className="aspect-square relative rounded-lg overflow-hidden">
+                  <img
+                    src={image}
+                    alt={`Portfolio image ${index + 1}`}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Artist's Products */}
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">Artwork for Sale</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {seller.products.map((product) => (
               <Card key={product.id} className="group overflow-hidden hover:shadow-xl transition-all duration-300 border-0 bg-white/50 backdrop-blur-sm">

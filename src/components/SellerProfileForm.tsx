@@ -54,7 +54,7 @@ export const SellerProfileForm = ({ redirectPath = "/dashboard",initialValues }:
     bio: initialValues?.bio || "",
     profileImage: initialValues?.profileImage || "",
     portfolioImages: initialValues?.portfolioImages || [],
-    categoryIds: initialValues?.categoryIds || [],
+    categoryIds: initialValues?.categoryIds?.map((c: any) => c.id) || [],
     pickupAddress: initialValues?.pickupAddress || {
       pincode: "",
       addressLine1: "",

@@ -84,9 +84,9 @@ export const AddressInput = ({ type, onAddressChange, initialAddress }: AddressI
       addressLine2,
       city,
       state,
-      country: "India"
+      country: "India",
     });
-  }, [addressLine1, addressLine2]);
+  }, [pincode, addressLine1, addressLine2, city, state, onAddressChange]);
 
   return (
     <div className="space-y-4">
