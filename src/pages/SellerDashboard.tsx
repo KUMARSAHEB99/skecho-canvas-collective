@@ -26,10 +26,11 @@ import {
 } from "@/components/ui/table";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
-import { log } from "console";
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
-import { Dialog ,DialogContent,DialogHeader,DialogTitle} from "@/components/ui/dialog"
+import { Dialog as ConfirmDialog, DialogContent as ConfirmDialogContent, DialogHeader as ConfirmDialogHeader, DialogTitle as ConfirmDialogTitle } from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
 
 const StatCard = ({ title, value, icon: Icon, trend }: any) => (
   <Card>
@@ -56,6 +57,11 @@ const SellerDashboard = () => {
   const queryClient = useQueryClient();
   const [deletingProductId, setDeletingProductId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [customOrders, setCustomOrders] = useState<any[]>([]);
+  const [customOrderMessages, setCustomOrderMessages] = useState<{ [orderId: string]: string }>({});
+  const [customOrderLoading, setCustomOrderLoading] = useState(false);
+  const [markingCompleteId, setMarkingCompleteId] = useState<string | null>(null);
+  const [isMarkingComplete, setIsMarkingComplete] = useState(false);
   
   // Fetch seller profile and products
   const { data: sellerProfiles, isLoading, error } = useQuery({
@@ -76,6 +82,74 @@ const SellerDashboard = () => {
     },
     enabled: !!user,
   });
+
+  // Fetch current user's DB id
+  const { data: userProfile } = useQuery({
+    queryKey: ["userProfile"],
+    queryFn: async () => {
+      const idToken = await user?.getIdToken();
+      const res = await axios.get("http://localhost:3000/api/user/profile", {
+        headers: { Authorization: `Bearer ${idToken}` }
+      });
+      return res.data;
+    },
+    enabled: !!user,
+  });
+
+  // Fetch custom orders for this seller (artist)
+  useEffect(() => {
+    const fetchCustomOrders = async () => {
+      if (!user || !userProfile) return;
+      setCustomOrderLoading(true);
+      try {
+        const idToken = await user.getIdToken();
+        // Find the seller profile for the current user
+        const mySellerProfile = sellerProfiles?.find(
+          (profile) => profile.user?.id === userProfile.id || profile.userId === userProfile.id
+        );
+        const artistId = mySellerProfile?.user?.id || mySellerProfile?.userId;
+        if (!artistId) {
+          console.log("artist id nhi mila");
+          return;
+        }
+        const res = await axios.get(`http://localhost:3000/api/custom-orders/artist/${artistId}`, {
+          headers: { Authorization: `Bearer ${idToken}` },
+        });
+        setCustomOrders(res.data);
+      } catch (err) {
+        setCustomOrders([]);
+      } finally {
+        setCustomOrderLoading(false);
+      }
+    };
+    fetchCustomOrders();
+  }, [user, userProfile, sellerProfiles]);
+
+  // Approve or reject order
+  const handleOrderAction = async (orderId: string, action: 'accepted' | 'rejected') => {
+    try {
+      const idToken = await user.getIdToken();
+      await axios.patch(
+        `http://localhost:3000/api/custom-orders/${orderId}`,
+        {
+          status: action,
+          rejectionReason: action === 'rejected' ? customOrderMessages[orderId] : null,
+        },
+        {
+          headers: { Authorization: `Bearer ${idToken}` },
+        }
+      );
+      setCustomOrders((prev) =>
+        prev.map((order) =>
+          order.id === orderId ? { ...order, status: action, rejectionReason: action === 'rejected' ? customOrderMessages[orderId] : null } : order
+        )
+      );
+      setCustomOrderMessages((prev) => ({ ...prev, [orderId]: '' }));
+      toast({ title: `Order ${action === 'accepted' ? 'approved' : 'rejected'}` });
+    } catch (err) {
+      toast({ title: `Failed to update order`, variant: 'destructive' });
+    }
+  };
 
   if(loading){
     console.log("loading is true");
@@ -120,6 +194,12 @@ const SellerDashboard = () => {
   const sellerProfile= sellerProfiles?.[0];
   const products = sellerProfile?.products || [];
 
+  // Split custom orders by status
+  const requestedOrders = customOrders.filter(order => order.status === 'requested');
+  const acceptedOrders = customOrders.filter(order => order.status === 'accepted');
+  // Placeholder for normal orders count (if you implement it)
+  const ordersCount = 0; // Replace with actual count if you have normal orders
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-skecho-warm-gray/30 to-skecho-coral-light/20">
       <Navigation />
@@ -152,7 +232,18 @@ const SellerDashboard = () => {
         <Tabs defaultValue="products" className="space-y-6">
           <TabsList>
             <TabsTrigger value="products">Products</TabsTrigger>
-            <TabsTrigger value="orders">Orders</TabsTrigger>
+            <TabsTrigger value="orders">
+              Orders
+              {ordersCount > 0 && <Badge className="ml-2" variant="secondary">{ordersCount}</Badge>}
+            </TabsTrigger>
+            <TabsTrigger value="requested">
+              Requested Orders
+              {requestedOrders.length > 0 && <Badge className="ml-2" variant="secondary">{requestedOrders.length}</Badge>}
+            </TabsTrigger>
+            <TabsTrigger value="accepted">
+              Accepted Orders
+              {acceptedOrders.length > 0 && <Badge className="ml-2" variant="secondary">{acceptedOrders.length}</Badge>}
+            </TabsTrigger>
             <TabsTrigger value="analytics">Analytics</TabsTrigger>
           </TabsList>
 
@@ -209,11 +300,11 @@ const SellerDashboard = () => {
               </CardContent>
             </Card>
             {/* Delete Confirmation Dialog */}
-            <Dialog open={!!deletingProductId} onOpenChange={() => setDeletingProductId(null)}>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Delete Product</DialogTitle>
-                </DialogHeader>
+            <ConfirmDialog open={!!deletingProductId} onOpenChange={() => setDeletingProductId(null)}>
+              <ConfirmDialogContent>
+                <ConfirmDialogHeader>
+                  <ConfirmDialogTitle>Delete Product</ConfirmDialogTitle>
+                </ConfirmDialogHeader>
                 <div>Are you sure you want to delete this product?</div>
                 <div className="flex justify-end gap-2 mt-4">
                   <Button variant="ghost" onClick={() => setDeletingProductId(null)} disabled={isDeleting}>Cancel</Button>
@@ -238,18 +329,255 @@ const SellerDashboard = () => {
                     {isDeleting ? "Deleting..." : "Delete"}
                   </Button>
                 </div>
-              </DialogContent>
-            </Dialog>
+              </ConfirmDialogContent>
+            </ConfirmDialog>
           </TabsContent>
 
           <TabsContent value="orders" className="space-y-4">
             <Card>
               <CardContent className="p-6">
-                <div className="text-center text-gray-500 py-8">
-                  Orders functionality coming soon.
-                </div>
+                <h2 className="text-xl font-bold mb-4">Custom Art Orders</h2>
+                {customOrderLoading ? (
+                  <div className="text-center text-gray-500 py-8">Loading custom orders...</div>
+                ) : customOrders.length === 0 ? (
+                  <div className="text-center text-gray-500 py-8">No custom orders found.</div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Order ID</TableHead>
+                        <TableHead>Customer</TableHead>
+                        <TableHead>Description</TableHead>
+                        <TableHead>Reference Image</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Message</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {customOrders.map((order) => (
+                        <TableRow key={order.id}>
+                          <TableCell>{order.id.slice(0, 8)}...</TableCell>
+                          <TableCell>{order.user?.name || order.userId}</TableCell>
+                          <TableCell>{order.description}</TableCell>
+                          <TableCell>
+                            {order.referenceImage ? (
+                              <a href={order.referenceImage} target="_blank" rel="noopener noreferrer">
+                                <img src={order.referenceImage} alt="Reference" className="w-16 h-16 object-cover rounded" />
+                              </a>
+                            ) : (
+                              '—'
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <span className={`px-2 py-1 rounded-full text-xs ${
+                              order.status === 'requested'
+                                ? 'bg-yellow-100 text-yellow-700'
+                                : order.status === 'accepted'
+                                ? 'bg-green-100 text-green-700'
+                                : order.status === 'rejected'
+                                ? 'bg-red-100 text-red-700'
+                                : 'bg-gray-100 text-gray-700'
+                            }`}>
+                              {order.status}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            <input
+                              type="text"
+                              className="border rounded px-2 py-1 text-sm w-32"
+                              placeholder="Message (optional)"
+                              value={customOrderMessages[order.id] || ''}
+                              onChange={e => setCustomOrderMessages(prev => ({ ...prev, [order.id]: e.target.value }))}
+                              disabled={order.status !== 'requested'}
+                            />
+                          </TableCell>
+                          <TableCell>
+                            {order.status === 'requested' ? (
+                              <div className="flex gap-2">
+                                <Button size="sm" variant="outline" onClick={() => handleOrderAction(order.id, 'accepted')}>Approve</Button>
+                                <Button size="sm" variant="destructive" onClick={() => handleOrderAction(order.id, 'rejected')}>Reject</Button>
+                              </div>
+                            ) : order.status === 'rejected' ? (
+                              <span className="text-xs text-red-600">{order.rejectionReason}</span>
+                            ) : null}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="requested" className="space-y-4">
+            <Card>
+              <CardContent className="p-6">
+                <h2 className="text-xl font-bold mb-4">Requested Custom Orders</h2>
+                {customOrderLoading ? (
+                  <div className="text-center text-gray-500 py-8">Loading custom orders...</div>
+                ) : requestedOrders.length === 0 ? (
+                  <div className="text-center text-gray-500 py-8">No requested orders found.</div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Order ID</TableHead>
+                        <TableHead>Customer</TableHead>
+                        <TableHead>Size</TableHead>
+                        <TableHead>Material</TableHead>
+                        <TableHead>Total Price</TableHead>
+                        <TableHead>Description</TableHead>
+                        <TableHead>Reference Image</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Message</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {requestedOrders.map((order) => (
+                        <TableRow key={order.id}>
+                          <TableCell>{order.id.slice(0, 8)}...</TableCell>
+                          <TableCell>{order.user?.name || 'Unknown'}</TableCell>
+                          <TableCell>{order.paperSize || '-'}</TableCell>
+                          <TableCell>{order.paperType || '-'}</TableCell>
+                          <TableCell>{order.basePrice ? `₹${order.basePrice}` : '-'}</TableCell>
+                          <TableCell>{order.description}</TableCell>
+                          <TableCell>
+                            {order.referenceImage ? (
+                              <a href={order.referenceImage} target="_blank" rel="noopener noreferrer">
+                                <img src={order.referenceImage} alt="Reference" className="w-16 h-16 object-cover rounded" />
+                              </a>
+                            ) : (
+                              '—'
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <span className={`px-2 py-1 rounded-full text-xs bg-yellow-100 text-yellow-700`}>
+                              {order.status}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            <input
+                              type="text"
+                              className="border rounded px-2 py-1 text-sm w-32"
+                              placeholder="Message (optional)"
+                              value={customOrderMessages[order.id] || ''}
+                              onChange={e => setCustomOrderMessages(prev => ({ ...prev, [order.id]: e.target.value }))}
+                              disabled={order.status !== 'requested'}
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex gap-2">
+                              <Button size="sm" variant="outline" onClick={() => handleOrderAction(order.id, 'accepted')}>Approve</Button>
+                              <Button size="sm" variant="destructive" onClick={() => handleOrderAction(order.id, 'rejected')}>Reject</Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="accepted" className="space-y-4">
+            <Card>
+              <CardContent className="p-6">
+                <h2 className="text-xl font-bold mb-4">Accepted Custom Orders</h2>
+                {customOrderLoading ? (
+                  <div className="text-center text-gray-500 py-8">Loading custom orders...</div>
+                ) : acceptedOrders.length === 0 ? (
+                  <div className="text-center text-gray-500 py-8">No accepted orders found.</div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Order ID</TableHead>
+                        <TableHead>Customer</TableHead>
+                        <TableHead>Size</TableHead>
+                        <TableHead>Material</TableHead>
+                        <TableHead>Total Price</TableHead>
+                        <TableHead>Description</TableHead>
+                        <TableHead>Reference Image</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {acceptedOrders.map((order) => (
+                        <TableRow key={order.id}>
+                          <TableCell>{order.id.slice(0, 8)}...</TableCell>
+                          <TableCell>{order.user?.name || 'Unknown'}</TableCell>
+                          <TableCell>{order.paperSize || '-'}</TableCell>
+                          <TableCell>{order.paperType || '-'}</TableCell>
+                          <TableCell>{order.basePrice ? `₹${order.basePrice}` : '-'}</TableCell>
+                          <TableCell>{order.description}</TableCell>
+                          <TableCell>
+                            {order.referenceImage ? (
+                              <a href={order.referenceImage} target="_blank" rel="noopener noreferrer">
+                                <img src={order.referenceImage} alt="Reference" className="w-16 h-16 object-cover rounded" />
+                              </a>
+                            ) : (
+                              '—'
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <span className={`px-2 py-1 rounded-full text-xs bg-green-100 text-green-700`}>
+                              {order.status}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            <Button size="sm" variant="outline" onClick={() => setMarkingCompleteId(order.id)}>
+                              Mark as Completed
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
+            </Card>
+            {/* Confirmation Dialog for Mark as Completed */}
+            <ConfirmDialog open={!!markingCompleteId} onOpenChange={() => setMarkingCompleteId(null)}>
+              <ConfirmDialogContent>
+                <ConfirmDialogHeader>
+                  <ConfirmDialogTitle>Mark Order as Completed</ConfirmDialogTitle>
+                </ConfirmDialogHeader>
+                <div>Are you sure you want to mark this order as completed?</div>
+                <div className="flex justify-end gap-2 mt-4">
+                  <Button variant="ghost" onClick={() => setMarkingCompleteId(null)} disabled={isMarkingComplete}>Cancel</Button>
+                  <Button variant="default" onClick={async () => {
+                    if (!markingCompleteId) return;
+                    setIsMarkingComplete(true);
+                    try {
+                      const idToken = await user.getIdToken();
+                      await axios.patch(
+                        `http://localhost:3000/api/custom-orders/${markingCompleteId}`,
+                        { status: 'delivered' },
+                        { headers: { Authorization: `Bearer ${idToken}` } }
+                      );
+                      setCustomOrders((prev) =>
+                        prev.map((order) =>
+                          order.id === markingCompleteId ? { ...order, status: 'delivered' } : order
+                        )
+                      );
+                      setMarkingCompleteId(null);
+                      toast({ title: 'Order marked as completed' });
+                    } catch (err) {
+                      toast({ title: 'Failed to mark as completed', variant: 'destructive' });
+                    } finally {
+                      setIsMarkingComplete(false);
+                    }
+                  }} disabled={isMarkingComplete}>
+                    {isMarkingComplete ? 'Marking...' : 'Mark as Completed'}
+                  </Button>
+                </div>
+              </ConfirmDialogContent>
+            </ConfirmDialog>
           </TabsContent>
 
           <TabsContent value="analytics" className="space-y-4">

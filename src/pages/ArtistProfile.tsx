@@ -19,18 +19,23 @@ import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { Skeleton } from "@/components/ui/skeleton";
 import { User } from "lucide-react";
+import { useAuth } from "@/lib/AuthContext";
 
 interface Seller {
   id: string;
+  userId:string;
   profileImage: string | null;
   portfolioImages: string[];
   doesCustomArt: boolean;
   customArtPricing: any;
   materialOptions: any;
   user: {
+    id: string;
     name: string;
     email: string;
     createdAt: string;
+    firebaseUid: string;
+    // Add any other fields you expect from the backend
   };
   products: Array<{
     id: string;
@@ -46,18 +51,19 @@ interface Seller {
 }
 
 const CustomArtRequestForm = ({
-  artistName,
-  artistEmail,
+  userId,
   pricing,
   materials,
+  artistId,
 }: {
+  userId: string | null;
   artistName: string;
   artistEmail: string;
   pricing: any;
   materials: any;
+  artistId: string;
 }) => {
   const [formData, setFormData] = useState({
-   
     description: "",
     image: null as File | null,
     material: "",
@@ -66,6 +72,8 @@ const CustomArtRequestForm = ({
     remarks: "",
   });
   const [totalPrice, setTotalPrice] = useState(0);
+  const { user } = useAuth();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (formData.size && formData.material && formData.people) {
@@ -79,16 +87,40 @@ const CustomArtRequestForm = ({
     }
   }, [formData.size, formData.material, formData.people, pricing, materials]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle form submission - would typically send to an API
-    console.log("Form submitted:", {
-      ...formData,
-      totalPrice,
-      artistName,
-      artistEmail,
-    });
-    // Add success message or redirect
+    setIsSubmitting(true);
+    try {
+      const idToken = await user?.getIdToken();
+      const formDataToSend = new FormData();
+      formDataToSend.append("userId", userId || "");
+      formDataToSend.append("artistId", artistId);
+      formDataToSend.append("description", formData.description);
+      formDataToSend.append("paperSize", formData.size);
+      formDataToSend.append("paperType", formData.material);
+      formDataToSend.append("numPeople", formData.people.toString());
+      formDataToSend.append("basePrice", totalPrice.toString());
+      if (formData.image) {
+        formDataToSend.append("referenceImage", formData.image);
+      }
+      // Optionally add remarks if you want to store them
+      await axios.post(
+        "http://localhost:3000/api/custom-orders",
+        formDataToSend,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+            Authorization: `Bearer ${idToken}`,
+          },
+        }
+      );
+      alert("Custom art request submitted!");
+    } catch (error) {
+      alert("Failed to submit request. Please try again.");
+      console.error(error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -180,7 +212,7 @@ const CustomArtRequestForm = ({
         Total: ${totalPrice.toFixed(2)}
       </div>
 
-      <Button type="submit" className="w-full bg-skecho-coral hover:bg-skecho-coral-dark text-white">
+      <Button type="submit" className="w-full bg-skecho-coral hover:bg-skecho-coral-dark text-white" disabled={isSubmitting}>
         Submit Request
       </Button>
     </form>
@@ -189,14 +221,29 @@ const CustomArtRequestForm = ({
 
 const ArtistProfile = () => {
   const { id } = useParams();
+  const { user } = useAuth();
+  const [userDbId, setUserDbId] = useState<string | null>(null);
   const { data: seller, isLoading, error } = useQuery<Seller>({
     queryKey: ['seller', id],
     queryFn: async () => {
       const response = await axios.get(`http://localhost:3000/api/seller/${id}`);
+      console.log(response.data);
       return response.data;
     },
     enabled: !!id
   });
+
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      if (!user) return;
+      const idToken = await user.getIdToken();
+      const res = await axios.get("http://localhost:3000/api/user/profile", {
+        headers: { Authorization: `Bearer ${idToken}` }
+      });
+      setUserDbId(res.data.id);
+    };
+    fetchUserProfile();
+  }, [user]);
 
   if (isLoading) {
     return (
@@ -304,10 +351,12 @@ const ArtistProfile = () => {
                   </DialogDescription>
                 </DialogHeader>
                 <CustomArtRequestForm
+                  userId={userDbId}
                   artistName={seller.user.name}
                   artistEmail={seller.user.email}
                   pricing={seller.customArtPricing}
                   materials={seller.materialOptions}
+                  artistId={seller.userId}
                 />
               </DialogContent>
             </Dialog>
