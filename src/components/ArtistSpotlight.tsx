@@ -32,7 +32,7 @@ export const ArtistSpotlight = () => {
   const { data: artists, isLoading, error } = useQuery<Artist[]>({
     queryKey: ["spotlightArtists"],
     queryFn: async () => {
-      const response = await axios.get("http://localhost:3000/api/seller");
+      const response = await axios.get("http://40.81.226.49/api/seller");
       return response.data;
     },
   });

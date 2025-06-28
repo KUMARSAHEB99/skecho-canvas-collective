@@ -72,7 +72,7 @@ export const SellerProfileForm = ({ redirectPath = "/dashboard",initialValues }:
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const response = await axios.get("http://localhost:3000/api/categories");
+        const response = await axios.get("http://40.81.226.49/api/categories");
         setCategories(response.data);
       } catch (error) {
         console.error("Error fetching categories:", error);
@@ -164,7 +164,7 @@ export const SellerProfileForm = ({ redirectPath = "/dashboard",initialValues }:
     try {
       const idToken = await user?.getIdToken();
       const response = await axios.post(
-        "http://localhost:3000/api/categories",
+        "http://40.81.226.49/api/categories",
         { name: newCategory },
         {
           headers: {
@@ -261,7 +261,7 @@ export const SellerProfileForm = ({ redirectPath = "/dashboard",initialValues }:
       });
 
       const response = await axios.post(
-        "http://localhost:3000/api/seller/complete-profile",
+        "http://40.81.226.49/api/seller/complete-profile",
         formDataToSend,
         {
           headers: {

@@ -16,7 +16,7 @@ const EditProduct = () => {
     const fetchProduct = async () => {
       try {
         const idToken = await user?.getIdToken();
-        const res = await axios.get(`http://localhost:3000/api/products/${id}`, {
+        const res = await axios.get(`http://40.81.226.49/api/products/${id}`, {
           headers: { Authorization: `Bearer ${idToken}` },
         });
         setProduct(res.data);

@@ -17,14 +17,14 @@ const EditProfile = () => {
       const idToken = await user.getIdToken();
 
       // Fetch user profile
-      const userRes = await axios.get("http://localhost:3000/api/user/profile", {
+      const userRes = await axios.get("http://40.81.226.49/api/user/profile", {
         headers: { Authorization: `Bearer ${idToken}` }
       });
       setUserProfile(userRes.data);
 
       // Fetch seller profile (if user is a seller)
       if (userRes.data.isSeller) {
-        const sellerRes = await axios.get("http://localhost:3000/api/seller/profile", {
+        const sellerRes = await axios.get("http://40.81.226.49/api/seller/profile", {
           headers: { Authorization: `Bearer ${idToken}` }
         });
         setSellerProfile(sellerRes.data);

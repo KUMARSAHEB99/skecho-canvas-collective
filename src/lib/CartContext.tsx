@@ -65,7 +65,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     try {
       setIsLoading(true);
       const config = await getAuthHeaders();
-      const response = await axios.get('http://localhost:3000/api/cart', config);
+      const response = await axios.get('http://40.81.226.49/api/cart', config);
       setCart(response.data);
     } catch (err) {
       console.error('Error fetching cart:', err);
@@ -83,7 +83,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     try {
       setIsLoading(true);
       const config = await getAuthHeaders();
-      await axios.post('http://localhost:3000/api/cart/items', {
+      await axios.post('http://40.81.226.49/api/cart/items', {
         productId,
         quantity
       }, config);
@@ -102,7 +102,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     try {
       setIsLoading(true);
       const config = await getAuthHeaders();
-      await axios.delete(`http://localhost:3000/api/cart/items/${itemId}`, config);
+      await axios.delete(`http://40.81.226.49/api/cart/items/${itemId}`, config);
       await fetchCart(); // Refresh cart data
       toast.success('Removed from cart');
     } catch (err) {
@@ -118,7 +118,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     try {
       setIsLoading(true);
       const config = await getAuthHeaders();
-      await axios.put(`http://localhost:3000/api/cart/items/${itemId}`, {
+      await axios.put(`http://40.81.226.49/api/cart/items/${itemId}`, {
         quantity
       }, config);
       await fetchCart(); // Refresh cart data
@@ -135,7 +135,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     try {
       setIsLoading(true);
       const config = await getAuthHeaders();
-      await axios.delete('http://localhost:3000/api/cart', config);
+      await axios.delete('http://40.81.226.49/api/cart', config);
       await fetchCart(); // Refresh cart data
       toast.success('Cart cleared');
     } catch (err) {

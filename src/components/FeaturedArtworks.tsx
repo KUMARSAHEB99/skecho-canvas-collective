@@ -27,7 +27,7 @@ export const FeaturedArtworks = () => {
     queryKey: ['featuredProducts'],
     queryFn: async () => {
       console.log('Fetching products...');
-      const response = await axios.get('http://localhost:3000/api/products');
+      const response = await axios.get('http://40.81.226.49/api/products');
       console.log('Products response:', response.data);
       return response.data;
     }

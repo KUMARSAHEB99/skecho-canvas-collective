@@ -81,7 +81,7 @@ const Browse = () => {
           params.set("order", "desc");
       }
 
-      const response = await axios.get(`http://localhost:3000/api/products?${params.toString()}`);
+      const response = await axios.get(`http://40.81.226.49/api/products?${params.toString()}`);
       return response.data;
     }
   });

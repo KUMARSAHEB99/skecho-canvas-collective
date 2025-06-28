@@ -105,7 +105,7 @@ const CustomArtRequestForm = ({
       }
       // Optionally add remarks if you want to store them
       await axios.post(
-        "http://localhost:3000/api/custom-orders",
+        "http://40.81.226.49/api/custom-orders",
         formDataToSend,
         {
           headers: {
@@ -226,7 +226,7 @@ const ArtistProfile = () => {
   const { data: seller, isLoading, error } = useQuery<Seller>({
     queryKey: ['seller', id],
     queryFn: async () => {
-      const response = await axios.get(`http://localhost:3000/api/seller/${id}`);
+      const response = await axios.get(`http://40.81.226.49/api/seller/${id}`);
       console.log(response.data);
       return response.data;
     },
@@ -237,7 +237,7 @@ const ArtistProfile = () => {
     const fetchUserProfile = async () => {
       if (!user) return;
       const idToken = await user.getIdToken();
-      const res = await axios.get("http://localhost:3000/api/user/profile", {
+      const res = await axios.get("http://40.81.226.49/api/user/profile", {
         headers: { Authorization: `Bearer ${idToken}` }
       });
       setUserDbId(res.data.id);

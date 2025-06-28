@@ -69,7 +69,7 @@ const SellerDashboard = () => {
     queryFn: async () => {
       const idToken = await user?.getIdToken();
       const res = await axios.get(
-        "http://localhost:3000/api/seller",
+        "http://40.81.226.49/api/seller",
         {
           headers: {
             Authorization: `Bearer ${idToken}`,
@@ -88,7 +88,7 @@ const SellerDashboard = () => {
     queryKey: ["userProfile"],
     queryFn: async () => {
       const idToken = await user?.getIdToken();
-      const res = await axios.get("http://localhost:3000/api/user/profile", {
+      const res = await axios.get("http://40.81.226.49/api/user/profile", {
         headers: { Authorization: `Bearer ${idToken}` }
       });
       return res.data;
@@ -112,7 +112,7 @@ const SellerDashboard = () => {
           console.log("artist id nhi mila");
           return;
         }
-        const res = await axios.get(`http://localhost:3000/api/custom-orders/artist/${artistId}`, {
+        const res = await axios.get(`http://40.81.226.49/api/custom-orders/artist/${artistId}`, {
           headers: { Authorization: `Bearer ${idToken}` },
         });
         setCustomOrders(res.data);
@@ -130,7 +130,7 @@ const SellerDashboard = () => {
     try {
       const idToken = await user.getIdToken();
       await axios.patch(
-        `http://localhost:3000/api/custom-orders/${orderId}`,
+        `http://40.81.226.49/api/custom-orders/${orderId}`,
         {
           status: action,
           rejectionReason: action === 'rejected' ? customOrderMessages[orderId] : null,
@@ -313,7 +313,7 @@ const SellerDashboard = () => {
                     setIsDeleting(true);
                     try {
                       const idToken = await user?.getIdToken();
-                      await axios.delete(`http://localhost:3000/api/products/${deletingProductId}`, {
+                      await axios.delete(`http://40.81.226.49/api/products/${deletingProductId}`, {
                         headers: { Authorization: `Bearer ${idToken}` },
                       });
                       toast({ title: "Product deleted" });
@@ -556,7 +556,7 @@ const SellerDashboard = () => {
                     try {
                       const idToken = await user.getIdToken();
                       await axios.patch(
-                        `http://localhost:3000/api/custom-orders/${markingCompleteId}`,
+                        `http://40.81.226.49/api/custom-orders/${markingCompleteId}`,
                         { status: 'delivered' },
                         { headers: { Authorization: `Bearer ${idToken}` } }
                       );

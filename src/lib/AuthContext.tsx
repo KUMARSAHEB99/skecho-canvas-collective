@@ -45,7 +45,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     if (!user) return false;
     try {
       const idToken = await user.getIdToken();
-      const res = await fetch('http://localhost:3000/api/user/profile-complete', {
+      const res = await fetch('http://40.81.226.49/api/user/profile-complete', {
         headers: { Authorization: `Bearer ${idToken}` }
       });
       if (!res.ok) throw new Error('Failed to check profile completion');
@@ -70,7 +70,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       const idToken = await currentUser.getIdToken();
       const response = await axios.get(
-        "http://localhost:3000/api/seller/profile-complete",
+        "http://40.81.226.49/api/seller/profile-complete",
         {
           headers: {
             Authorization: `Bearer ${idToken}`,

@@ -48,7 +48,7 @@ export const ArtworkFilters = ({
   const { data: categories } = useQuery({
     queryKey: ['categories'],
     queryFn: async () => {
-      const response = await axios.get('http://localhost:3000/api/categories');
+      const response = await axios.get('http://40.81.226.49/api/categories');
       return response.data;
     }
   });

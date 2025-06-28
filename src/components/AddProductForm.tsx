@@ -56,7 +56,7 @@ export const AddProductForm = ({ initialData, isEdit, onClose, onSuccess }: AddP
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const response = await axios.get("http://localhost:3000/api/categories");
+        const response = await axios.get("http://40.81.226.49/api/categories");
         setCategories(response.data);
       } catch (error) {
         console.error("Error fetching categories:", error);
@@ -130,7 +130,7 @@ export const AddProductForm = ({ initialData, isEdit, onClose, onSuccess }: AddP
     try {
       const idToken = await user?.getIdToken();
       const response = await axios.post(
-        "http://localhost:3000/api/categories",
+        "http://40.81.226.49/api/categories",
         { name: newCategory },
         {
           headers: {
@@ -209,7 +209,7 @@ export const AddProductForm = ({ initialData, isEdit, onClose, onSuccess }: AddP
       if (isEdit && initialData?.id) {
         // Edit mode: PUT request
         await axios.put(
-          `http://localhost:3000/api/products/${initialData.id}`,
+          `http://40.81.226.49/api/products/${initialData.id}`,
           formDataToSend,
           {
             headers: {
@@ -224,7 +224,7 @@ export const AddProductForm = ({ initialData, isEdit, onClose, onSuccess }: AddP
       } else {
         // Create mode: POST request
         await axios.post(
-          "http://localhost:3000/api/products",
+          "http://40.81.226.49/api/products",
           formDataToSend,
           {
             headers: {
@@ -264,7 +264,7 @@ export const AddProductForm = ({ initialData, isEdit, onClose, onSuccess }: AddP
     try {
       const idToken = await user?.getIdToken();
       await axios.put(
-        `http://localhost:3000/api/products/${initialData.id}`,
+        `http://40.81.226.49/api/products/${initialData.id}`,
         { isAvailable: !isAvailable },
         {
           headers: {

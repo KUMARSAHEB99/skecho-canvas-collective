@@ -44,7 +44,7 @@ const ProductDetail = () => {
   const { data: product, isLoading, error } = useQuery<Product>({
     queryKey: ['product', id],
     queryFn: async () => {
-      const response = await axios.get(`http://localhost:3000/api/products/${id}`);
+      const response = await axios.get(`http://40.81.226.49/api/products/${id}`);
       return response.data;
     },
     enabled: !!id

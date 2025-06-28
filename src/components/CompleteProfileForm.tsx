@@ -64,7 +64,7 @@ export const CompleteProfileForm = ({
       const idToken = await user?.getIdToken();
       
       await axios.post(
-        "http://localhost:3000/api/user/complete-profile",
+        "http://40.81.226.49/api/user/complete-profile",
         {
           phoneNumber: formData.phoneNumber,
           address: formData.address
