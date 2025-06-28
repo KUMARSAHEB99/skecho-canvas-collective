@@ -26,7 +26,6 @@ jobs:
           cd /var/www/skecho-canvas-collective
           git pull origin main
           npm install
-          npx prisma generate
           npm run build
-          pm2 restart project-backend
+          sudo cp -r dist/* /var/www/react-frontend/
         EOF
