@@ -10,6 +10,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useCart } from "@/lib/CartContext";
+import { SideDrawer } from "@/components/ui/SideDrawer";
+import { Menu } from "lucide-react";
+import React from "react";
 
 export const Navigation = () => {
   const { user, signOut } = useAuth();
@@ -25,10 +28,12 @@ export const Navigation = () => {
     }
   };
 
+  const [drawerOpen, setDrawerOpen] = React.useState(false);
+
   return (
     <nav className="bg-white/90 backdrop-blur-sm border-b border-skecho-coral/20 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
+        <div className="flex justify-between items-center h-16 min-w-0">
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-2">
             <div className="w-8 h-8 bg-skecho-coral rounded-lg flex items-center justify-center">
@@ -39,8 +44,75 @@ export const Navigation = () => {
             </span>
           </Link>
 
-          {/* Search */}
-          <div className="hidden md:flex flex-1 max-w-lg mx-8">
+          {/* Hamburger menu for mobile */}
+          <button
+            className="md:hidden p-2 rounded focus:outline-none"
+            onClick={() => setDrawerOpen(true)}
+            aria-label="Open menu"
+          >
+            <Menu className="h-6 w-6" />
+          </button>
+
+          <SideDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)}>
+            {/* Drawer content: logo, nav links, actions, etc. */}
+            <div className="flex flex-col gap-6 mt-4 px-4">
+              {/* Logo */}
+              <Link to="/" className="flex items-center space-x-2 mb-6">
+                <div className="w-8 h-8 bg-skecho-coral rounded-lg flex items-center justify-center">
+                  <span className="text-white font-bold text-lg">S</span>
+                </div>
+                <span className="text-2xl font-bold text-skecho-coral">Skecho</span>
+              </Link>
+              {/* Nav links */}
+              <Link to="/browse" className="text-gray-700 hover:text-skecho-coral-dark text-lg" onClick={() => setDrawerOpen(false)}>
+                Browse
+              </Link>
+              <Link to="/artists" className="text-gray-700 hover:text-skecho-coral-dark text-lg" onClick={() => setDrawerOpen(false)}>
+                Artists
+              </Link>
+              {/* Seller Dashboard and Profile (if logged in) */}
+              {user && (
+                <>
+                  <Link to="/dashboard" className="flex items-center gap-2 text-gray-700 hover:text-skecho-coral-dark text-lg" onClick={() => setDrawerOpen(false)}>
+                    Seller Dashboard
+                  </Link>
+                  <Link to="/edit-profile" className="flex items-center gap-2 text-gray-700 hover:text-skecho-coral-dark text-lg" onClick={() => setDrawerOpen(false)}>
+                    Profile
+                  </Link>
+                </>
+              )}
+              {/* Actions */}
+              <Link to="/cart" className="flex items-center gap-2 text-gray-700 hover:text-skecho-coral-dark text-lg" onClick={() => setDrawerOpen(false)}>
+                Cart
+              </Link>
+              {/* Show 'Join as Artist' only if not already a seller */}
+              {user && !user.isSeller && (
+                <Link to="/complete-seller-profile" onClick={() => setDrawerOpen(false)}>
+                  <Button className="bg-skecho-coral hover:bg-skecho-coral-dark text-white w-full max-w-xs mx-auto">
+                    Join as Artist
+                  </Button>
+                </Link>
+              )}
+              {/* Logout button if logged in */}
+              {user && (
+                <Button
+                  variant="outline"
+                  className="w-full max-w-xs mx-auto mt-4 flex items-center gap-2 justify-center"
+                  onClick={async () => {
+                    await signOut();
+                    setDrawerOpen(false);
+                    navigate("/");
+                  }}
+                >
+                  <LogOut className="w-5 h-5 mr-2" />
+                  Logout
+                </Button>
+              )}
+            </div>
+          </SideDrawer>
+
+          {/* Search (desktop) */}
+          <div className="hidden md:flex flex-1 max-w-lg min-w-0">
             <div className="relative w-full">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
               <input
@@ -51,7 +123,7 @@ export const Navigation = () => {
             </div>
           </div>
 
-          {/* Navigation Links */}
+          {/* Navigation Links (desktop) */}
           <div className="hidden md:flex items-center space-x-8">
             <Link to="/browse" className="text-gray-700 hover:text-skecho-coral-dark transition-colors">
               Browse Art
@@ -59,11 +131,10 @@ export const Navigation = () => {
             <Link to="/artists" className="text-gray-700 hover:text-skecho-coral-dark transition-colors">
               Artists
             </Link>
-
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex items-center space-x-4">
+          {/* Action Buttons (desktop) */}
+          <div className="hidden md:flex items-center space-x-4">
             <div className="relative">
               <Link to="/cart">
                 <Button variant="ghost" size="icon" className="relative">
@@ -120,7 +191,7 @@ export const Navigation = () => {
                   </Button>
                 </Link>
                 <Link to="/signup">
-                  <Button className="bg-skecho-coral hover:bg-skecho-coral-dark text-white">
+                  <Button className="bg-skecho-coral hover:bg-skecho-coral-dark text-white max-w-xs truncate md:w-auto md:max-w-none">
                     Join as Artist
                   </Button>
                 </Link>

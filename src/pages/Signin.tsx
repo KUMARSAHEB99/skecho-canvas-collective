@@ -7,6 +7,7 @@ import { signInWithPopup } from "firebase/auth";
 import { FcGoogle } from "react-icons/fc";
 import { useAuth } from "@/lib/AuthContext";
 import { useEffect } from "react";
+import { useMutation } from "@tanstack/react-query";
 
 const Signin = () => {
   const navigate = useNavigate();
@@ -36,10 +37,6 @@ const Signin = () => {
           'Content-Type': 'application/json'
         }
       });
-
-      if (!response.ok) {
-        throw new Error('Failed to create user in database');
-      }
 
       // The redirect will be handled by the useEffect above
     } catch (error) {

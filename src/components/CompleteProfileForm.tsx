@@ -5,20 +5,22 @@ import { useNavigate } from "react-router-dom";
 import { useToast } from "@/components/ui/use-toast";
 import { AddressInput } from "./AddressInput";
 import { useAuth } from "@/lib/AuthContext";
-import axios from "axios";
+import { useMutation } from "@tanstack/react-query";
 
 interface CompleteProfileFormProps {
   onSkip?: () => void;
   redirectPath?: string;
   showSkip?: boolean;
   initialValues?:any;
+  onSuccess?: () => void;
 }
 
 export const CompleteProfileForm = ({ 
   onSkip, 
   redirectPath = "/", 
   showSkip = true ,
-  initialValues
+  initialValues,
+  onSuccess
 }: CompleteProfileFormProps) => {
   console.log("initial vals",initialValues);
   
@@ -56,44 +58,42 @@ export const CompleteProfileForm = ({
     }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-
-    try {
+  const completeProfileMutation = useMutation({
+    mutationFn: async (data: { phoneNumber: string; address: any }) => {
       const idToken = await user?.getIdToken();
-      
-      await axios.post(
-        "http://40.81.226.49/api/user/complete-profile",
-        {
-          phoneNumber: formData.phoneNumber,
-          address: formData.address
+      return fetch("http://40.81.226.49/api/user/complete-profile", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${idToken}`,
         },
-        {
-          headers: {
-            Authorization: `Bearer ${idToken}`,
-          },
-        }
-      );
-      await checkProfileCompletion(user);
-      toast({
-        title: "Profile Updated",
-        description: "Your profile has been successfully completed.",
-        duration: 3000,
+        body: JSON.stringify(data),
+      }).then(res => {
+        if (!res.ok) throw new Error("Failed to complete profile");
+        return res.json();
       });
-
-      navigate(redirectPath);
-    } catch (error) {
-      console.error("Error updating profile:", error);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Profile completed!",
+        description: "Your profile is now complete.",
+      });
+      if (onSuccess) onSuccess();
+    },
+    onError: () => {
       toast({
         title: "Error",
-        description: "Failed to update profile. Please try again.",
+        description: "Failed to complete profile. Please try again.",
         variant: "destructive",
-        duration: 3000,
       });
-    } finally {
-      setIsSubmitting(false);
-    }
+    },
+    onSettled: () => setIsSubmitting(false)
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    completeProfileMutation.mutate({ phoneNumber: formData.phoneNumber, address: formData.address });
   };
 
   const handleSkip = () => {

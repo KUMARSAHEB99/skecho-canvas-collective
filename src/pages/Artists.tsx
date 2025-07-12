@@ -6,7 +6,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { User } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import axios from "axios";
+import { fetchSellers } from "@/lib/api";
+import { Seller } from "@/lib/types";
 
 interface Artist {
   id: string;
@@ -32,12 +33,11 @@ interface Artist {
 }
 
 const Artists = () => {
-  const { data: artists, isLoading, error } = useQuery<Artist[]>({
+  const { data: artists, isLoading, error } = useQuery<Seller[]>({
     queryKey: ['artists'],
-    queryFn: async () => {
-      const response = await axios.get('http://40.81.226.49/api/seller');
-      return response.data;
-    }
+    queryFn: fetchSellers,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
   });
 
   const renderSkeletons = () => (
@@ -102,15 +102,11 @@ const Artists = () => {
                 <CardContent className="p-6">
                   <div className="flex items-center gap-4">
                     <div className="w-16 h-16 rounded-full bg-gradient-to-br from-skecho-coral to-skecho-coral-dark flex items-center justify-center overflow-hidden">
-                      {artist.profileImage ? (
-                        <img 
-                          src={artist.profileImage} 
-                          alt={`${artist.user.name}'s profile`}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <User className="w-8 h-8 text-white" />
-                      )}
+                      <img 
+                        src={artist.profileImage || "/assets/pfp.jpg"} 
+                        alt={`${artist.user.name}'s profile`}
+                        className="w-full h-full object-cover"
+                      />
                     </div>
                     <div>
                       <h3 className="text-xl font-semibold text-gray-900">{artist.user.name}</h3>
@@ -133,10 +129,6 @@ const Artists = () => {
                     <div>
                       <div className="text-2xl font-bold text-skecho-coral">{artist.products.length}</div>
                       <div className="text-sm text-gray-600">Artworks</div>
-                    </div>
-                    <div>
-                      <div className="text-2xl font-bold text-skecho-coral">{artist._count.products}</div>
-                      <div className="text-sm text-gray-600">Total Products</div>
                     </div>
                   </div>
 

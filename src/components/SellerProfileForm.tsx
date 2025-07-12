@@ -15,7 +15,8 @@ import {
 import { useToast } from "@/components/ui/use-toast";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ImageUpload } from "./ImageUpload";
-import axios from "axios";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { fetchCategories } from "@/lib/api";
 import { AddressInput } from "./AddressInput";
 import { CustomArtPricing } from "./CustomArtPricing";
 
@@ -68,24 +69,15 @@ export const SellerProfileForm = ({ redirectPath = "/dashboard",initialValues }:
     materialOptions: initialValues?.materialOptions || null
   }));
 
-  // Fetch categories on component mount
+  const { data: categoriesData, isLoading: isCategoriesLoading } = useQuery({
+    queryKey: ['categories'],
+    queryFn: fetchCategories,
+    staleTime: 10 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+  });
   useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const response = await axios.get("http://40.81.226.49/api/categories");
-        setCategories(response.data);
-      } catch (error) {
-        console.error("Error fetching categories:", error);
-        toast({
-          title: "Error",
-          description: "Failed to load categories. Please try again.",
-          variant: "destructive",
-        });
-      }
-    };
-
-    fetchCategories();
-  }, []);
+    if (categoriesData) setCategories(categoriesData);
+  }, [categoriesData]);
 
   const handleProfileImageUpload = async (files: File[]) => {
     if (files.length > 0) {
@@ -163,17 +155,20 @@ export const SellerProfileForm = ({ redirectPath = "/dashboard",initialValues }:
 
     try {
       const idToken = await user?.getIdToken();
-      const response = await axios.post(
-        "http://40.81.226.49/api/categories",
-        { name: newCategory },
-        {
-          headers: {
-            Authorization: `Bearer ${idToken}`,
-          },
-        }
-      );
+      const response = await fetch(`http://40.81.226.49/api/categories`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${idToken}`,
+        },
+        body: JSON.stringify({ name: newCategory }),
+      });
 
-      const newCategoryData = response.data;
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const newCategoryData = await response.json();
       setCategories(prev => [...prev, newCategoryData]);
       setFormData(prev => ({
         ...prev,
@@ -260,16 +255,18 @@ export const SellerProfileForm = ({ redirectPath = "/dashboard",initialValues }:
         formDataToSend.append('portfolioImages', file);
       });
 
-      const response = await axios.post(
-        "http://40.81.226.49/api/seller/complete-profile",
-        formDataToSend,
-        {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-            Authorization: `Bearer ${idToken}`,
-          },
-        }
-      );
+      const response = await fetch(`http://40.81.226.49/api/seller/complete-profile`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          Authorization: `Bearer ${idToken}`,
+        },
+        body: formDataToSend,
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
 
       // Cleanup preview URLs
       if (formData.profileImage) {

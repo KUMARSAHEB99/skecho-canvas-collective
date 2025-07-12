@@ -1,7 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Heart, ShoppingCart } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useCart } from "@/lib/CartContext";
 import { useAuth } from "@/lib/AuthContext";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -33,10 +33,11 @@ interface ArtworkGridProps {
 export const ArtworkGrid = ({ products, isLoading }: ArtworkGridProps) => {
   const { addToCart, removeFromCart, isInCart, cart, isLoading: isCartLoading } = useCart();
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   const handleCartAction = async (artwork: Product) => {
     if (!user) {
-      // Redirect to sign in
+      navigate("/signin"); // or "/signup" if that's the correct route
       return;
     }
 

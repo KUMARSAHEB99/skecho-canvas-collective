@@ -6,7 +6,7 @@ import { Heart, ShoppingCart, Share2, Trash2, Minus, Plus } from "lucide-react";
 import { useAuth } from "@/lib/AuthContext";
 import { useToast } from "@/components/ui/use-toast";
 import { useQuery } from "@tanstack/react-query";
-import axios from "axios";
+import { fetchProduct } from "@/lib/api";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCart } from "@/lib/CartContext";
 import { Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext } from "@/components/ui/carousel";
@@ -43,10 +43,9 @@ const ProductDetail = () => {
 
   const { data: product, isLoading, error } = useQuery<Product>({
     queryKey: ['product', id],
-    queryFn: async () => {
-      const response = await axios.get(`http://40.81.226.49/api/products/${id}`);
-      return response.data;
-    },
+    queryFn: () => fetchProduct(id!),
+    staleTime: 2 * 60 * 1000,
+    gcTime: 2 * 60 * 1000,
     enabled: !!id
   });
 

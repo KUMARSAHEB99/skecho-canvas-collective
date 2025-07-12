@@ -4,7 +4,7 @@ import { auth } from '@/lib/firebase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/components/ui/use-toast';
-import axios from 'axios';
+import { useMutation } from '@tanstack/react-query';
 
 interface PhoneVerificationProps {
   onVerificationComplete: (phoneNumber: string) => void;
@@ -83,15 +83,14 @@ export const PhoneVerification = ({ onVerificationComplete, initialPhoneNumber =
 
       // Update phone verification status in backend
       const idToken = await auth.currentUser?.getIdToken();
-      await axios.post(
-        '/api/auth/verify-phone',
-        { phoneNumber },
-        {
-          headers: {
-            Authorization: `Bearer ${idToken}`,
-          },
-        }
-      );
+      await fetch('/api/auth/verify-phone', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${idToken}`,
+        },
+        body: JSON.stringify({ phoneNumber }),
+      });
 
       toast({
         title: 'Phone verified',

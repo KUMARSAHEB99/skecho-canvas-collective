@@ -16,53 +16,30 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { fetchSeller } from "@/lib/api";
+import { Seller } from "@/lib/types";
 import axios from "axios";
 import { Skeleton } from "@/components/ui/skeleton";
 import { User } from "lucide-react";
 import { useAuth } from "@/lib/AuthContext";
 
-interface Seller {
-  id: string;
-  userId:string;
-  profileImage: string | null;
-  portfolioImages: string[];
-  doesCustomArt: boolean;
-  customArtPricing: any;
-  materialOptions: any;
-  user: {
-    id: string;
-    name: string;
-    email: string;
-    createdAt: string;
-    firebaseUid: string;
-    // Add any other fields you expect from the backend
-  };
-  products: Array<{
-    id: string;
-    name: string;
-    price: number;
-    images: string[];
-    isAvailable: boolean;
-    categories: Array<{
-      id: string;
-      name: string;
-    }>;
-  }>;
-}
-
-const CustomArtRequestForm = ({
-  userId,
-  pricing,
-  materials,
-  artistId,
-}: {
+type CustomArtRequestFormProps = {
   userId: string | null;
   artistName: string;
   artistEmail: string;
   pricing: any;
   materials: any;
   artistId: string;
-}) => {
+};
+
+const CustomArtRequestForm = ({
+  userId,
+  artistName,
+  artistEmail,
+  pricing,
+  materials,
+  artistId,
+}: CustomArtRequestFormProps) => {
   const [formData, setFormData] = useState({
     description: "",
     image: null as File | null,
@@ -225,11 +202,9 @@ const ArtistProfile = () => {
   const [userDbId, setUserDbId] = useState<string | null>(null);
   const { data: seller, isLoading, error } = useQuery<Seller>({
     queryKey: ['seller', id],
-    queryFn: async () => {
-      const response = await axios.get(`http://40.81.226.49/api/seller/${id}`);
-      console.log(response.data);
-      return response.data;
-    },
+    queryFn: () => fetchSeller(id!),
+    staleTime: 5 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
     enabled: !!id
   });
 
@@ -304,29 +279,25 @@ const ArtistProfile = () => {
           {/* Artist Photo/Avatar */}
           <div className="relative">
             <div className="aspect-square w-full bg-gradient-to-br from-skecho-coral to-skecho-coral-dark rounded-lg shadow-xl flex items-center justify-center overflow-hidden">
-              {seller.profileImage ? (
-                <img 
-                  src={seller.profileImage} 
-                  alt={`${seller.user.name}'s profile`}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <User className="w-32 h-32 text-white" />
-              )}
+              <img 
+                src={seller.profileImage ?? "/assets/pfp.jpg"} 
+                alt={`${seller.user?.name ?? "Artist"}'s profile`}
+                className="w-full h-full object-cover"
+              />
             </div>
           </div>
 
           {/* Artist Info */}
           <div className="md:col-span-2 space-y-6">
             <div>
-              <h1 className="text-4xl font-bold text-gray-900 mb-2">{seller.user.name}</h1>
-              <p className="text-gray-600">Member since {new Date(seller.user.createdAt).toLocaleDateString()}</p>
+              <h1 className="text-4xl font-bold text-gray-900 mb-2">{seller.user?.name ?? "Artist"}</h1>
+              <p className="text-gray-600">Member since {seller.user?.createdAt ? new Date(seller.user.createdAt).toLocaleDateString() : "Unknown"}</p>
             </div>
 
             <div>
               <h2 className="text-xl font-semibold mb-2">Categories</h2>
               <div className="flex flex-wrap gap-2">
-                {Array.from(new Set(seller.products.flatMap(p => p.categories.map(c => c.name)))).map((category) => (
+                {Array.from(new Set((seller.products ?? []).flatMap(p => p.categories.map(c => c.name)))).map((category) => (
                   <span
                     key={category}
                     className="px-3 py-1 bg-skecho-coral/10 text-skecho-coral-dark rounded-full text-sm"
@@ -347,15 +318,15 @@ const ArtistProfile = () => {
                 <DialogHeader>
                   <DialogTitle>Request Custom Artwork</DialogTitle>
                   <DialogDescription>
-                    Fill out the form below to request a custom piece from {seller.user.name}.
+                    Fill out the form below to request a custom piece from {seller.user?.name ?? "Artist"}.
                   </DialogDescription>
                 </DialogHeader>
                 <CustomArtRequestForm
                   userId={userDbId}
-                  artistName={seller.user.name}
-                  artistEmail={seller.user.email}
-                  pricing={seller.customArtPricing}
-                  materials={seller.materialOptions}
+                  artistName={seller.user?.name ?? ""}
+                  artistEmail={seller.user?.email ?? ""}
+                  pricing={seller.customArtPricing ?? {}}
+                  materials={seller.materialOptions ?? []}
                   artistId={seller.userId}
                 />
               </DialogContent>
@@ -368,7 +339,7 @@ const ArtistProfile = () => {
           <div className="mb-12">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">Portfolio</h2>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {seller.portfolioImages.map((image, index) => (
+              {(seller.portfolioImages ?? []).map((image, index) => (
                 <div key={index} className="aspect-square relative rounded-lg overflow-hidden">
                   <img
                     src={image}
@@ -385,7 +356,7 @@ const ArtistProfile = () => {
         <div>
           <h2 className="text-2xl font-bold text-gray-900 mb-6">Artwork for Sale</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {seller.products.map((product) => (
+            {(seller.products ?? []).map((product) => (
               <Card key={product.id} className="group overflow-hidden hover:shadow-xl transition-all duration-300 border-0 bg-white/50 backdrop-blur-sm">
                 <Link to={`/artwork/${product.id}`}>
                   <div className="relative">

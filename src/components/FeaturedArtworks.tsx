@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Heart, ShoppingCart } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import axios from "axios";
+import { fetchProducts } from "@/lib/api";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface Product {
@@ -23,14 +23,11 @@ interface Product {
 }
 
 export const FeaturedArtworks = () => {
-  const { data, isLoading, error } = useQuery<{ products: Product[] }>({
+  const { data, isLoading, error } = useQuery({
     queryKey: ['featuredProducts'],
-    queryFn: async () => {
-      console.log('Fetching products...');
-      const response = await axios.get('http://40.81.226.49/api/products');
-      console.log('Products response:', response.data);
-      return response.data;
-    }
+    queryFn: () => fetchProducts(),
+    staleTime: 5 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
   });
 
   // Add debugging logs

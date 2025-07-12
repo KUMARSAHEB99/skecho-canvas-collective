@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { AddProductForm } from "@/components/AddProductForm";
 import { useAuth } from "@/lib/AuthContext";
-import axios from "axios";
+import { fetchProduct } from "@/lib/api";
+import { useQuery } from "@tanstack/react-query";
 
 const EditProduct = () => {
   const { id } = useParams<{ id: string }>();
@@ -12,25 +13,22 @@ const EditProduct = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchProduct = async () => {
-      try {
-        const idToken = await user?.getIdToken();
-        const res = await axios.get(`http://40.81.226.49/api/products/${id}`, {
-          headers: { Authorization: `Bearer ${idToken}` },
-        });
-        setProduct(res.data);
-      } catch (err: any) {
-        setError("Failed to load product");
-      } finally {
-        setLoading(false);
-      }
-    };
-    if (id && user) fetchProduct();
-  }, [id, user]);
+  const { data: productData, isLoading, error: queryError } = useQuery({
+    queryKey: ["product", id],
+    queryFn: () => fetchProduct(id!),
+    enabled: !!id,
+    staleTime: 2 * 60 * 1000,
+    gcTime: 2 * 60 * 1000,
+  });
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
-  if (error) return <div className="min-h-screen flex items-center justify-center text-red-600">{error}</div>;
+  useEffect(() => {
+    setProduct(productData);
+    setLoading(isLoading);
+    setError(queryError?.message);
+  }, [productData, isLoading, queryError]);
+
+  if (isLoading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+  if (queryError) return <div className="min-h-screen flex items-center justify-center text-red-600">Failed to load product</div>;
   if (!product) return null;
 
   return (

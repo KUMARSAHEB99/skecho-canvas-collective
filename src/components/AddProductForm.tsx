@@ -14,7 +14,8 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/components/ui/use-toast";
 import { ImageUpload } from "./ImageUpload";
-import axios from "axios";
+import { fetchCategories, createProduct, updateProduct, updateProductAvailability, createCategory } from "@/lib/api";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 interface Category {
   id: string;
@@ -52,24 +53,15 @@ export const AddProductForm = ({ initialData, isEdit, onClose, onSuccess }: AddP
     if (typeof initialData?.isAvailable === 'boolean') setIsAvailable(initialData.isAvailable);
   }, [initialData]);
 
-  // Fetch categories on component mount
+  const { data: categoriesData, isLoading: isCategoriesLoading } = useQuery({
+    queryKey: ['categories'],
+    queryFn: fetchCategories,
+    staleTime: 10 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+  });
   useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const response = await axios.get("http://40.81.226.49/api/categories");
-        setCategories(response.data);
-      } catch (error) {
-        console.error("Error fetching categories:", error);
-        toast({
-          title: "Error",
-          description: "Failed to load categories. Please try again.",
-          variant: "destructive",
-        });
-      }
-    };
-
-    fetchCategories();
-  }, []);
+    if (categoriesData) setCategories(categoriesData);
+  }, [categoriesData]);
 
   // If initialData changes (e.g. when editing a different product), update formData
   useEffect(() => {
@@ -124,22 +116,15 @@ export const AddProductForm = ({ initialData, isEdit, onClose, onSuccess }: AddP
     }));
   };
 
-  const handleAddNewCategory = async () => {
-    if (!newCategory.trim()) return;
+  const queryClient = useQueryClient();
 
-    try {
+  // Category creation mutation
+  const createCategoryMutation = useMutation({
+    mutationFn: async (name: string) => {
       const idToken = await user?.getIdToken();
-      const response = await axios.post(
-        "http://40.81.226.49/api/categories",
-        { name: newCategory },
-        {
-          headers: {
-            Authorization: `Bearer ${idToken}`,
-          },
-        }
-      );
-
-      const newCategoryData = response.data;
+      return createCategory(idToken, { name });
+    },
+    onSuccess: (newCategoryData) => {
       setCategories(prev => [...prev, newCategoryData]);
       setFormData(prev => ({
         ...prev,
@@ -147,144 +132,109 @@ export const AddProductForm = ({ initialData, isEdit, onClose, onSuccess }: AddP
       }));
       setNewCategory("");
       setShowNewCategoryInput(false);
-
-      toast({
-        title: "Category Added",
-        description: "New category has been created successfully.",
-      });
-    } catch (error) {
-      console.error("Error creating category:", error);
-      toast({
-        title: "Error",
-        description: "Failed to create new category. Please try again.",
-        variant: "destructive",
-      });
+      toast({ title: "Category Added" });
+      queryClient.invalidateQueries({ queryKey: ['categories'] });
+    },
+    onError: () => {
+      toast({ title: "Failed to add category", variant: "destructive" });
     }
+  });
+
+  // Product create mutation
+  const createProductMutation = useMutation({
+    mutationFn: async (formDataToSend: FormData) => {
+      const idToken = await user?.getIdToken();
+      return createProduct(idToken, formDataToSend);
+    },
+    onSuccess: () => {
+      toast({ title: "Success", description: "Your artwork has been listed successfully." });
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+      if (onSuccess) onSuccess();
+      if (onClose) onClose();
+      if (!isEdit) navigate("/dashboard");
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to create product. Please try again.", variant: "destructive" });
+    },
+    onSettled: () => setIsSubmitting(false)
+  });
+
+  // Product update mutation
+  const updateProductMutation = useMutation({
+    mutationFn: async ({ productId, formDataToSend }: { productId: string, formDataToSend: FormData }) => {
+      const idToken = await user?.getIdToken();
+      return updateProduct(idToken, productId, formDataToSend);
+    },
+    onSuccess: () => {
+      toast({ title: "Product updated successfully." });
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+      if (onSuccess) onSuccess();
+      if (onClose) onClose();
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to update product. Please try again.", variant: "destructive" });
+    },
+    onSettled: () => setIsSubmitting(false)
+  });
+
+  // Product availability mutation
+  const updateAvailabilityMutation = useMutation({
+    mutationFn: async (isAvailable: boolean) => {
+      const idToken = await user?.getIdToken();
+      return updateProductAvailability(idToken, initialData.id, isAvailable);
+    },
+    onSuccess: () => {
+      setIsAvailable((prev) => !prev);
+      toast({ title: !isAvailable ? 'Product marked as available.' : 'Product marked as sold.' });
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+      if (onSuccess) onSuccess();
+    },
+    onError: () => {
+      toast({ title: 'Failed to update availability.', variant: 'destructive' });
+    },
+    onSettled: () => setIsSubmitting(false)
+  });
+
+  const handleAddNewCategory = async () => {
+    createCategoryMutation.mutate(newCategory);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (imageFiles.length === 0 && !isEdit) {
-      toast({
-        title: "Error",
-        description: "Please upload at least one image.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (formData.categoryIds.length === 0) {
-      toast({
-        title: "Error",
-        description: "Please select at least one category.",
-        variant: "destructive",
-      });
-      return;
-    }
-
     setIsSubmitting(true);
-
-    try {
-      const idToken = await user?.getIdToken();
-      const formDataToSend = new FormData();
-      formDataToSend.append('name', formData.name);
-      formDataToSend.append('description', formData.description);
-      formDataToSend.append('price', formData.price);
-      formDataToSend.append('categoryIds', JSON.stringify(formData.categoryIds));
-      formDataToSend.append('quantity', formData.quantity.toString());
-      
-      // Add main image (first image)
-      if (imageFiles.length > 0) {
-        formDataToSend.append('mainImage', imageFiles[0]);
-      }
-
-      // Add additional images
-      if (imageFiles.length > 1) {
-        imageFiles.slice(1).forEach(file => {
-          formDataToSend.append('additionalImages', file);
-        });
-      }
-
-      if (isEdit && initialData?.id) {
-        // Edit mode: PUT request
-        await axios.put(
-          `http://40.81.226.49/api/products/${initialData.id}`,
-          formDataToSend,
-          {
-            headers: {
-              'Content-Type': 'multipart/form-data',
-              Authorization: `Bearer ${idToken}`,
-            },
-          }
-        );
-        toast({
-          title: "Product updated successfully.",
-        });
-      } else {
-        // Create mode: POST request
-        await axios.post(
-          "http://40.81.226.49/api/products",
-          formDataToSend,
-          {
-            headers: {
-              'Content-Type': 'multipart/form-data',
-              Authorization: `Bearer ${idToken}`,
-            },
-          }
-        );
-        toast({
-          title: "Success",
-          description: "Your artwork has been listed successfully.",
-        });
-      }
-
-      // Cleanup preview URLs
-      formData.images.forEach(url => URL.revokeObjectURL(url));
-
-      if (onSuccess) onSuccess();
-      if (onClose) onClose();
-      if (!isEdit) navigate("/dashboard");
-    } catch (error) {
-      console.error(isEdit ? "Error updating product:" : "Error creating product:", error);
-      toast({
-        title: "Error",
-        description: isEdit ? "Failed to update product. Please try again." : "Failed to create product. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSubmitting(false);
+    const formDataToSend = new FormData();
+    formDataToSend.append('name', formData.name);
+    formDataToSend.append('description', formData.description);
+    formDataToSend.append('price', formData.price);
+    formDataToSend.append('categoryIds', JSON.stringify(formData.categoryIds));
+    formDataToSend.append('quantity', formData.quantity.toString());
+    
+    // Add main image (first image)
+    if (imageFiles.length > 0) {
+      formDataToSend.append('mainImage', imageFiles[0]);
     }
+
+    // Add additional images
+    if (imageFiles.length > 1) {
+      imageFiles.slice(1).forEach(file => {
+        formDataToSend.append('additionalImages', file);
+      });
+    }
+
+    if (isEdit && initialData?.id) {
+      updateProductMutation.mutate({ productId: initialData.id, formDataToSend });
+    } else {
+      createProductMutation.mutate(formDataToSend);
+    }
+    // Cleanup preview URLs
+    formData.images.forEach(url => URL.revokeObjectURL(url));
   };
 
   // Handler for Mark as Sold/Available
   const handleToggleAvailability = async () => {
     if (!initialData?.id) return;
     setIsSubmitting(true);
-    try {
-      const idToken = await user?.getIdToken();
-      await axios.put(
-        `http://40.81.226.49/api/products/${initialData.id}`,
-        { isAvailable: !isAvailable },
-        {
-          headers: {
-            Authorization: `Bearer ${idToken}`,
-          },
-        }
-      );
-      setIsAvailable(!isAvailable);
-      toast({
-        title: !isAvailable ? 'Product marked as available.' : 'Product marked as sold.',
-      });
-      if (onSuccess) onSuccess();
-    } catch (error) {
-      toast({
-        title: 'Failed to update availability.',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
+    updateAvailabilityMutation.mutate(!isAvailable);
   };
 
   return (

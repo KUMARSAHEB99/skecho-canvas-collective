@@ -5,7 +5,7 @@ import { ArtworkFilters } from "@/components/ArtworkFilters";
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import axios from "axios";
+import { fetchProducts } from "@/lib/api";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface Product {
@@ -53,37 +53,18 @@ const Browse = () => {
   }, [selectedCategory, priceRange, sortBy, availability, setSearchParams]);
 
   // Fetch products with filters
-  const { data: productsData, isLoading } = useQuery<{ products: Product[]; total: number }>({
+  const { data: productsData, isLoading } = useQuery({
     queryKey: ['products', selectedCategory, priceRange, sortBy, availability],
-    queryFn: async () => {
-      const params = new URLSearchParams();
-      if (selectedCategory !== "all") params.set("category", selectedCategory);
-      if (priceRange[0] !== 0) params.set("minPrice", priceRange[0].toString());
-      if (priceRange[1] !== 1000) params.set("maxPrice", priceRange[1].toString());
-      if (availability) params.set("isAvailable", "true");
-      
-      // Add sorting
-      switch (sortBy) {
-        case "oldest":
-          params.set("orderBy", "createdAt");
-          params.set("order", "asc");
-          break;
-        case "price-low":
-          params.set("orderBy", "price");
-          params.set("order", "asc");
-          break;
-        case "price-high":
-          params.set("orderBy", "price");
-          params.set("order", "desc");
-          break;
-        default: // newest
-          params.set("orderBy", "createdAt");
-          params.set("order", "desc");
-      }
-
-      const response = await axios.get(`http://40.81.226.49/api/products?${params.toString()}`);
-      return response.data;
-    }
+    queryFn: () => fetchProducts({
+      category: selectedCategory !== "all" ? selectedCategory : undefined,
+      minPrice: priceRange[0] !== 0 ? priceRange[0] : undefined,
+      maxPrice: priceRange[1] !== 1000 ? priceRange[1] : undefined,
+      isAvailable: availability ? true : undefined,
+      orderBy: sortBy === "price-low" || sortBy === "price-high" ? "price" : "createdAt",
+      order: sortBy === "oldest" ? "asc" : sortBy === "price-low" ? "asc" : "desc"
+    }),
+    staleTime: 5 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
   });
 
   const handleReset = () => {
@@ -100,13 +81,13 @@ const Browse = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
           <h1 className="text-4xl font-bold mb-4 text-skecho-charcoal">Browse Artworks</h1>
-          <p className="text-xl text-gray-600">
+          <div className="text-xl text-gray-600">
             {isLoading ? (
               <Skeleton className="h-8 w-96" />
             ) : (
               `Discover ${productsData?.total || 0} unique pieces from talented independent artists`
             )}
-          </p>
+          </div>
         </div>
 
         <div className="grid lg:grid-cols-4 gap-8">

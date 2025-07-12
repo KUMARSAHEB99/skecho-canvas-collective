@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 
@@ -50,25 +49,12 @@ export const Hero = () => {
             </div>
           </div>
 
-          <div className="relative">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-4">
-                <div className="h-48 bg-gradient-to-br from-skecho-coral-light to-skecho-coral rounded-2xl overflow-hidden">
-                  <div className="w-full h-full bg-gradient-to-br from-skecho-coral/60 to-skecho-coral-dark/60"></div>
-                </div>
-                <div className="h-32 bg-gradient-to-br from-orange-200 to-skecho-coral-light rounded-2xl overflow-hidden">
-                  <div className="w-full h-full bg-gradient-to-br from-orange-400/60 to-skecho-coral/60"></div>
-                </div>
-              </div>
-              <div className="space-y-4 pt-8">
-                <div className="h-32 bg-gradient-to-br from-green-200 to-teal-200 rounded-2xl overflow-hidden">
-                  <div className="w-full h-full bg-gradient-to-br from-green-400/60 to-teal-400/60"></div>
-                </div>
-                <div className="h-48 bg-gradient-to-br from-skecho-coral-light to-skecho-coral rounded-2xl overflow-hidden">
-                  <div className="w-full h-full bg-gradient-to-br from-skecho-coral/60 to-skecho-coral-dark/60"></div>
-                </div>
-              </div>
-            </div>
+          <div className="relative hidden lg:block">
+            <img 
+              src="/assets/hero.png" 
+              alt="Girl drawing artwork" 
+              className="w-full h-auto max-w-lg mx-auto"
+            />
           </div>
         </div>
       </div>

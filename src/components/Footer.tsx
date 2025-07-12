@@ -3,9 +3,9 @@ import { Link } from "react-router-dom";
 
 export const Footer = () => {
   return (
-    <footer className="bg-gray-900 text-gray-300 py-16">
+    <footer className="bg-gray-900 text-gray-300 py-16 overflow-x-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 min-w-0">
           {/* Logo and Description */}
           <div className="space-y-4">
             <div className="flex items-center space-x-2">
@@ -53,7 +53,7 @@ export const Footer = () => {
           </div>
         </div>
 
-        <div className="border-t border-gray-800 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center">
+        <div className="border-t border-gray-800 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center min-w-0">
           <p className="text-gray-400">&copy; 2024 Skecho. All rights reserved.</p>
           <div className="flex space-x-6 mt-4 md:mt-0">
             <Link to="/privacy" className="text-gray-400 hover:text-purple-400 transition-colors">Privacy Policy</Link>

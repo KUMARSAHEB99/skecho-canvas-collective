@@ -41,12 +41,22 @@ const DrawerContent = React.forwardRef<
     <DrawerPrimitive.Content
       ref={ref}
       className={cn(
-        "fixed inset-x-0 bottom-0 z-50 mt-24 flex h-auto flex-col rounded-t-[10px] border bg-background",
+        // Right-side drawer, half the screen width
+        "fixed inset-y-0 right-0 z-50 flex h-full w-1/2 max-w-full flex-col border-l bg-background shadow-lg transition-transform duration-300",
         className
       )}
       {...props}
     >
-      <div className="mx-auto mt-4 h-2 w-[100px] rounded-full bg-muted" />
+      {/* Custom close (X) button at top right */}
+      <DrawerClose asChild>
+        <button
+          aria-label="Close"
+          className="absolute top-4 right-4 text-2xl text-gray-500 hover:text-gray-800 focus:outline-none"
+        >
+          &times;
+        </button>
+      </DrawerClose>
+      <div className="mt-12" />
       {children}
     </DrawerPrimitive.Content>
   </DrawerPortal>

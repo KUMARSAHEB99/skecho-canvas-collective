@@ -123,10 +123,10 @@ const Cart = () => {
           <div className="lg:col-span-2 space-y-6">
             {cart.items.map((item) => (
               <div key={item.id} className="bg-white/50 backdrop-blur-sm rounded-lg p-6">
-                <div className="flex gap-6">
+                <div className="flex flex-col sm:flex-row gap-6">
                   {/* Product Image */}
                   <Link to={`/artwork/${item.product.id}`} className="shrink-0">
-                    <div className="h-32 w-32 rounded-lg overflow-hidden">
+                    <div className="h-32 w-32 mx-auto sm:mx-0 rounded-lg overflow-hidden">
                       {item.product.images[0] ? (
                         <img 
                           src={item.product.images[0]} 
@@ -140,26 +140,34 @@ const Cart = () => {
                   </Link>
 
                   {/* Product Info */}
-                  <div className="flex-1">
-                    <Link to={`/artwork/${item.product.id}`}>
-                      <h3 className="text-lg font-semibold text-gray-900 hover:text-skecho-coral transition-colors">
-                        {item.product.name}
-                      </h3>
-                    </Link>
-                    <Link to={`/artist/${item.product.seller.user.name}`}>
-                      <p className="text-gray-600 hover:text-skecho-coral transition-colors">
-                        by {item.product.seller.user.name}
-                      </p>
-                    </Link>
+                  <div className="flex-1 flex flex-col justify-between">
+                    <div>
+                      <Link to={`/artwork/${item.product.id}`}>
+                        <h3 className="text-lg font-semibold text-gray-900 hover:text-skecho-coral transition-colors">
+                          {item.product.name}
+                        </h3>
+                      </Link>
+                      <Link to={`/artist/${item.product.seller.user.name}`}>
+                        <p className="text-gray-600 hover:text-skecho-coral transition-colors">
+                          by {item.product.seller.user.name}
+                        </p>
+                      </Link>
+                    </div>
 
-                    <div className="mt-4 flex items-center justify-between">
+                    <div className="mt-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                       <div className="flex items-center gap-4">
                         <div className="flex items-center gap-2">
                           <Button 
                             size="icon" 
                             variant="outline"
-                            onClick={() => handleQuantityChange(item.id, item.quantity, -1, item.product.quantity)}
-                            disabled={item.quantity <= 1}
+                            onClick={() => {
+                              if (item.quantity === 1) {
+                                removeFromCart(item.id);
+                              } else {
+                                handleQuantityChange(item.id, item.quantity, -1, item.product.quantity);
+                              }
+                            }}
+                            disabled={false}
                           >
                             <Minus className="w-4 h-4" />
                           </Button>
@@ -174,7 +182,9 @@ const Cart = () => {
                           </Button>
                         </div>
                         <span className="text-sm text-gray-500">
-                          ({item.product.quantity} available)
+                          {item.quantity >= item.product.quantity
+                            ? `not more than ${item.product.quantity} available`
+                            : `${item.product.quantity} available`}
                         </span>
                       </div>
                       <div className="flex items-center gap-4">

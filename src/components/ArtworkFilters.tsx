@@ -7,7 +7,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { SlidersHorizontal, X } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import axios from "axios";
+import { fetchCategories } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
 interface ArtworkFiltersProps {
@@ -47,10 +47,9 @@ export const ArtworkFilters = ({
 }: ArtworkFiltersProps) => {
   const { data: categories } = useQuery({
     queryKey: ['categories'],
-    queryFn: async () => {
-      const response = await axios.get('http://40.81.226.49/api/categories');
-      return response.data;
-    }
+    queryFn: fetchCategories,
+    staleTime: 10 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
   });
 
   const FilterContent = () => (

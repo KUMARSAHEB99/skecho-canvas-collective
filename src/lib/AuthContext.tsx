@@ -2,7 +2,8 @@ import { createContext, useContext, useEffect, useState } from "react";
 import { User, signOut as firebaseSignOut } from "firebase/auth";
 import { auth } from "./firebase";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import { fetchUserProfile } from "@/lib/api";
+import { useQuery } from "@tanstack/react-query";
 import { Navigate } from "react-router-dom";
 
 interface AuthContextType {
@@ -45,21 +46,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     if (!user) return false;
     try {
       const idToken = await user.getIdToken();
-      const res = await fetch('http://40.81.226.49/api/user/profile-complete', {
-        headers: { Authorization: `Bearer ${idToken}` }
-      });
-      if (!res.ok) throw new Error('Failed to check profile completion');
-
-      const {isComplete} = await res.json();
-      setIsProfileComplete(isComplete);
-      localStorage.setItem("profile_complete", isComplete.toString());
-      
-      return isComplete;
+      const res = await fetchUserProfile(idToken);
+      setIsProfileComplete(!!res.profileCompleted);
+      return !!res.profileCompleted;
     } catch (error) {
-      // Fallback to localStorage if API fails
-      const isComplete = localStorage.getItem(`profile_complete`) === 'true';
-      setIsProfileComplete(isComplete);
-      return isComplete;
+      setIsProfileComplete(false);
+      return false;
     }
   };
 
@@ -69,20 +61,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     if (!currentUser) return false;
     try {
       const idToken = await currentUser.getIdToken();
-      const response = await axios.get(
-        "http://40.81.226.49/api/seller/profile-complete",
-        {
-          headers: {
-            Authorization: `Bearer ${idToken}`,
-          },
-        }
-      );
-      console.log(response.data);
-      const { isComplete } = response.data;
-      console.log("setting the bool value as ",isComplete);
-      setIsSellerProfileComplete(isComplete);
-      localStorage.setItem("seller_profile_complete", isComplete.toString());
-      return isComplete;
+      const response = await fetchUserProfile(idToken);
+      setIsSellerProfileComplete(!!response.profileCompleted);
+      return !!response.profileCompleted;
     } catch (error) {
       console.error("Error checking seller profile completion:", error);
       // Fallback to localStorage if API fails
