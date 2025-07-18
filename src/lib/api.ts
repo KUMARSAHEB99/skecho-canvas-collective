@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { Product, Seller, Category, Cart, CartItem, User } from './types';
 
-const API_BASE = 'http://40.81.226.49/api';
+const API_BASE = 'http://localhost:3000/api';
 
 // Products
 export const fetchProducts = async (params?: Record<string, any>): Promise<{ products: Product[]; total: number; page: number; totalPages: number }> => {

@@ -22,17 +22,7 @@ interface ArtworkFiltersProps {
   onReset: () => void;
 }
 
-const artMediums = [
-  "Oil Paint",
-  "Acrylic",
-  "Watercolor",
-  "Digital",
-  "Photography",
-  "Mixed Media",
-  "Sculpture",
-  "Drawing",
-  "Printmaking"
-];
+
 
 export const ArtworkFilters = ({
   selectedCategory,

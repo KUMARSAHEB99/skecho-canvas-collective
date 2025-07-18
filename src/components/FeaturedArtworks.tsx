@@ -6,21 +6,6 @@ import { useQuery } from "@tanstack/react-query";
 import { fetchProducts } from "@/lib/api";
 import { Skeleton } from "@/components/ui/skeleton";
 
-interface Product {
-  id: string;
-  name: string;
-  price: number;
-  images: string[];
-  seller: {
-    user: {
-      name: string;
-    }
-  };
-  categories: Array<{
-    id: string;
-    name: string;
-  }>;
-}
 
 export const FeaturedArtworks = () => {
   const { data, isLoading, error } = useQuery({
