@@ -8,26 +8,6 @@ import { useQuery } from "@tanstack/react-query";
 import { fetchProducts } from "@/lib/api";
 import { Skeleton } from "@/components/ui/skeleton";
 
-interface Product {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  images: string[];
-  isAvailable: boolean;
-  createdAt: string;
-  seller: {
-    id: string;
-    user: {
-      name: string;
-      email: string;
-    }
-  };
-  categories: Array<{
-    id: string;
-    name: string;
-  }>;
-}
 
 const Browse = () => {
   const [searchParams, setSearchParams] = useSearchParams();

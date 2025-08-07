@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/components/ui/use-toast";
 import { AddressInput } from "./AddressInput";
@@ -51,17 +51,17 @@ export const CompleteProfileForm = ({
     },
   });
 
-  const handleAddressChange = (address: any) => {
+  const handleAddressChange = useCallback((address: any) => {
     setFormData(prev => ({
       ...prev,
       address
     }));
-  };
+  }, []);
 
   const completeProfileMutation = useMutation({
     mutationFn: async (data: { phoneNumber: string; address: any }) => {
       const idToken = await user?.getIdToken();
-      return fetch("http://40.81.226.49/api/user/complete-profile", {
+      return fetch("http://localhost:3000/api/user/complete-profile", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

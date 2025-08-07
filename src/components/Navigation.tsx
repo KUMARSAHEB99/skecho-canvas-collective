@@ -86,7 +86,7 @@ export const Navigation = () => {
                 Cart
               </Link>
               {/* Show 'Join as Artist' only if not already a seller */}
-              {user && !user.isSeller && (
+              {user && (
                 <Link to="/complete-seller-profile" onClick={() => setDrawerOpen(false)}>
                   <Button className="bg-skecho-coral hover:bg-skecho-coral-dark text-white w-full max-w-xs mx-auto">
                     Join as Artist
@@ -190,7 +190,7 @@ export const Navigation = () => {
                     Sign In
                   </Button>
                 </Link>
-                <Link to="/signup">
+                <Link to="/signin">
                   <Button className="bg-skecho-coral hover:bg-skecho-coral-dark text-white max-w-xs truncate md:w-auto md:max-w-none">
                     Join as Artist
                   </Button>

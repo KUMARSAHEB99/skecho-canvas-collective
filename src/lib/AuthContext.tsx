@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useState } from "react";
 import { User, signOut as firebaseSignOut } from "firebase/auth";
 import { auth } from "./firebase";
 import { useNavigate } from "react-router-dom";
-import { fetchUserProfile } from "@/lib/api";
+import { fetchUserProfile, checkSellerProfileCompletion as checkSellerProfileCompletionAPI } from "@/lib/api";
 import { useQuery } from "@tanstack/react-query";
 import { Navigate } from "react-router-dom";
 
@@ -61,9 +61,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     if (!currentUser) return false;
     try {
       const idToken = await currentUser.getIdToken();
-      const response = await fetchUserProfile(idToken);
-      setIsSellerProfileComplete(!!response.profileCompleted);
-      return !!response.profileCompleted;
+      const response = await checkSellerProfileCompletionAPI(idToken);
+      setIsSellerProfileComplete(!!response.isComplete);
+      return !!response.isComplete;
     } catch (error) {
       console.error("Error checking seller profile completion:", error);
       // Fallback to localStorage if API fails

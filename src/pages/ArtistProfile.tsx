@@ -82,7 +82,7 @@ const CustomArtRequestForm = ({
       }
       // Optionally add remarks if you want to store them
       await axios.post(
-        "http://40.81.226.49/api/custom-orders",
+        "http://localhost:3000/api/custom-orders",
         formDataToSend,
         {
           headers: {
@@ -212,7 +212,7 @@ const ArtistProfile = () => {
     const fetchUserProfile = async () => {
       if (!user) return;
       const idToken = await user.getIdToken();
-      const res = await axios.get("http://40.81.226.49/api/user/profile", {
+      const res = await axios.get("http://localhost:3000/api/user/profile", {
         headers: { Authorization: `Bearer ${idToken}` }
       });
       setUserDbId(res.data.id);

@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { Product, Seller, Category, Cart, CartItem, User } from './types';
 
-const API_BASE = 'http://localhost:3000/api';
+const API_BASE = 'http://localhost:3000/api'; ///skecho.com
 
 // Products
 export const fetchProducts = async (params?: Record<string, any>): Promise<{ products: Product[]; total: number; page: number; totalPages: number }> => {
@@ -55,6 +55,12 @@ export const removeCartItem = async (token: string, itemId: string): Promise<{ m
 // User (requires auth)
 export const fetchUserProfile = async (token: string): Promise<User> => {
   const res = await axios.get(`${API_BASE}/user/profile`, { headers: { Authorization: `Bearer ${token}` } });
+  return res.data;
+};
+
+// Check seller profile completion
+export const checkSellerProfileCompletion = async (token: string): Promise<{ isComplete: boolean }> => {
+  const res = await axios.get(`${API_BASE}/seller/profile-complete`, { headers: { Authorization: `Bearer ${token}` } });
   return res.data;
 };
 

@@ -9,28 +9,6 @@ import { useQuery } from "@tanstack/react-query";
 import { fetchSellers } from "@/lib/api";
 import { Seller } from "@/lib/types";
 
-interface Artist {
-  id: string;
-  user: {
-    name: string;
-    email: string;
-    createdAt: string;
-  };
-  profileImage?: string;
-  products: Array<{
-    id: string;
-    name: string;
-    price: number;
-    images: string[];
-    categories: Array<{
-      id: string;
-      name: string;
-    }>;
-  }>;
-  _count: {
-    products: number;
-  };
-}
 
 const Artists = () => {
   const { data: artists, isLoading, error } = useQuery<Seller[]>({

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
@@ -32,6 +32,12 @@ export const AddressInput = ({ type, onAddressChange, initialAddress }: AddressI
   const [city, setCity] = useState(initialAddress?.city || "");
   const [state, setState] = useState(initialAddress?.state || "");
   const [isLoading, setIsLoading] = useState(false);
+  const onAddressChangeRef = useRef(onAddressChange);
+  
+  // Update ref when prop changes
+  useEffect(() => {
+    onAddressChangeRef.current = onAddressChange;
+  }, [onAddressChange]);
 
   useEffect(() => {
     const fetchPincodeDetails = async () => {
@@ -45,7 +51,7 @@ export const AddressInput = ({ type, onAddressChange, initialAddress }: AddressI
             const postOffice = data.PostOffice[0];
             setCity(postOffice.District);
             setState(postOffice.State);
-            onAddressChange({
+            onAddressChangeRef.current({
               pincode,
               addressLine1,
               addressLine2,
@@ -78,7 +84,7 @@ export const AddressInput = ({ type, onAddressChange, initialAddress }: AddressI
   }, [pincode]);
 
   useEffect(() => {
-    onAddressChange({
+    onAddressChangeRef.current({
       pincode,
       addressLine1,
       addressLine2,
@@ -86,7 +92,7 @@ export const AddressInput = ({ type, onAddressChange, initialAddress }: AddressI
       state,
       country: "India",
     });
-  }, [pincode, addressLine1, addressLine2, city, state, onAddressChange]);
+  }, [pincode, addressLine1, addressLine2, city, state]);
 
   return (
     <div className="space-y-4">

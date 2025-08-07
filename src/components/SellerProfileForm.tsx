@@ -52,6 +52,7 @@ export const SellerProfileForm = ({ redirectPath = "/dashboard",initialValues }:
   const [profileImageFile, setProfileImageFile] = useState<File | null>(null);
   const [portfolioImageFiles, setPortfolioImageFiles] = useState<File[]>([]);
   const [formData, setFormData] = useState(() => ({
+    phoneNumber: initialValues?.phone || "",
     bio: initialValues?.bio || "",
     profileImage: initialValues?.profileImage || "",
     portfolioImages: initialValues?.portfolioImages || [],
@@ -155,7 +156,7 @@ export const SellerProfileForm = ({ redirectPath = "/dashboard",initialValues }:
 
     try {
       const idToken = await user?.getIdToken();
-      const response = await fetch(`http://40.81.226.49/api/categories`, {
+      const response = await fetch(`http://localhost:3000/api/categories`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -234,6 +235,7 @@ export const SellerProfileForm = ({ redirectPath = "/dashboard",initialValues }:
       
       // Create FormData object
       const formDataToSend = new FormData();
+      formDataToSend.append('phoneNumber', formData.phoneNumber);
       formDataToSend.append('bio', formData.bio);
       formDataToSend.append('pickupAddress', JSON.stringify(formData.pickupAddress));
       formDataToSend.append('categoryIds', JSON.stringify(formData.categoryIds));
@@ -255,10 +257,10 @@ export const SellerProfileForm = ({ redirectPath = "/dashboard",initialValues }:
         formDataToSend.append('portfolioImages', file);
       });
 
-      const response = await fetch(`http://40.81.226.49/api/seller/complete-profile`, {
+      const response = await fetch(`http://localhost:3000/api/seller/complete-profile`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'multipart/form-data',
+          // 'Content-Type': 'multipart/form-data',
           Authorization: `Bearer ${idToken}`,
         },
         body: formDataToSend,
@@ -279,6 +281,9 @@ export const SellerProfileForm = ({ redirectPath = "/dashboard",initialValues }:
         description: "Your seller profile has been completed successfully.",
       });
 
+      // Set localStorage to indicate seller profile is complete
+      localStorage.setItem("seller_profile_complete", "true");
+      
       await checkSellerProfileCompletion(user);
       navigate(redirectPath);
     } catch (error) {
@@ -295,6 +300,21 @@ export const SellerProfileForm = ({ redirectPath = "/dashboard",initialValues }:
 
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
+      <div className="space-y-2">
+        <Label htmlFor="phoneNumber">Phone Number</Label>
+        <Input
+          id="phoneNumber"
+          type="tel"
+          placeholder="Enter your phone number"
+          value={formData.phoneNumber}
+          onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
+          required
+          pattern="[0-9]{10}"
+          className="w-full"
+        />
+        <p className="text-xs text-gray-500">Format: 10 digits without spaces or special characters</p>
+      </div>
+
       <div className="space-y-4">
         <Label>Profile Picture</Label>
         <div className="flex items-center gap-6">

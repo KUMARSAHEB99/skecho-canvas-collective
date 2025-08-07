@@ -30,7 +30,7 @@ const Signin = () => {
       const idToken = await result.user.getIdToken();
       
       // Call backend to create/update user
-      const response = await fetch('http://40.81.226.49/api/auth/create-user', {
+      const response = await fetch('http://localhost:3000/api/auth/create-user', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${idToken}`,
