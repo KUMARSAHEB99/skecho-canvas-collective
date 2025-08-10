@@ -19,6 +19,7 @@ import EditProduct from "./pages/EditProduct";
 import { AuthProvider } from "./lib/AuthContext";
 import { CartProvider } from "./lib/CartContext";
 import EditProfile from "./pages/EditProfile";
+import MyOrders from "./pages/MyOrders";
 
 const queryClient = new QueryClient();
 
@@ -44,6 +45,7 @@ const App = () => (
               <Route path="/cart" element={<Cart />} />
               <Route path="/edit-product/:id" element={<EditProduct />} />
               <Route path="/edit-profile" element={<EditProfile />} />
+              <Route path="/my-orders" element={<MyOrders />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

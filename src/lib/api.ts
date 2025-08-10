@@ -131,4 +131,22 @@ export const updateCustomOrderStatus = async (
 export const fetchCustomOrdersForArtist = async (token: string, artistId: string): Promise<any[]> => {
   const res = await axios.get(`${API_BASE}/custom-orders/artist/${artistId}`, { headers: { Authorization: `Bearer ${token}` } });
   return res.data;
+};
+
+// Custom Orders (fetch for user)
+export const fetchCustomOrdersForUser = async (token: string, userId: string): Promise<any[]> => {
+  const res = await axios.get(`${API_BASE}/custom-orders/user/${userId}`, { headers: { Authorization: `Bearer ${token}` } });
+  return res.data;
+};
+
+// Product Orders (fetch for user)
+export const fetchProductOrdersForUser = async (token: string, userId: string): Promise<any[]> => {
+  const res = await axios.get(`${API_BASE}/product-orders/user/${userId}`, { headers: { Authorization: `Bearer ${token}` } });
+  return res.data;
+};
+
+// Create a new product order
+export const createProductOrder = async (token: string, userId: string, productId: string): Promise<any> => {
+  const res = await axios.post(`${API_BASE}/product-orders`, { userId, productId }, { headers: { Authorization: `Bearer ${token}` } });
+  return res.data;
 }; 

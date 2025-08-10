@@ -59,9 +59,9 @@ const ProductDetail = () => {
     }
 
     if (cartItem) {
-      await removeFromCart(cartItem.id);
+      removeFromCart(cartItem.id);
     } else {
-      await addToCart(id!);
+      addToCart(id!);
     }
   };
 
@@ -69,7 +69,7 @@ const ProductDetail = () => {
     const newQuantity = currentQuantity + change;
     if (newQuantity >= 1 && newQuantity <= (product?.quantity || 0)) {
       try {
-        await updateQuantity(itemId, newQuantity);
+        updateQuantity(itemId, newQuantity);
       } catch (error: any) {
         toast({
           title: "Error",
@@ -279,7 +279,7 @@ const ProductDetail = () => {
                     className="w-full bg-skecho-coral hover:bg-skecho-coral-dark text-white"
                     disabled={!product.isAvailable || product.quantity === 0}
                   >
-                    Add to Cart
+                    {isCartLoading ? `...` : `Add to Cart`}
                   </Button>
                 )}
               </div>

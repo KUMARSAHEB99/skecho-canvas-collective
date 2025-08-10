@@ -25,7 +25,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { fetchSellers, fetchUserProfile, deleteProduct, updateCustomOrderStatus, fetchCustomOrdersForArtist } from "@/lib/api";
+import { fetchSeller, fetchUserProfile, deleteProduct, updateCustomOrderStatus, fetchCustomOrdersForArtist, fetchSellers } from "@/lib/api";
 import { Seller, User } from "@/lib/types";
 
 import { useState, useEffect } from "react";
@@ -65,9 +65,14 @@ const SellerDashboard = () => {
   const [isMarkingComplete, setIsMarkingComplete] = useState(false);
   
   // Fetch seller profile and products
-  const { data: sellerProfiles, isLoading, error } = useQuery<Seller[]>({
+  const { data: sellerProfiles, isLoading, error } = useQuery({
     queryKey: ["sellerProfile"],
-    queryFn: fetchSellers,
+    queryFn: async()=>{
+      const idToken = await user?.getIdToken();
+      console.log("idToken", idToken);
+      console.log("user", user?.uid);
+      return fetchSellers();
+    },
     staleTime: 5 * 60 * 1000,
     gcTime: 5 * 60 * 1000,
     enabled: !!user,
@@ -88,11 +93,11 @@ const SellerDashboard = () => {
   // Fetch custom orders for this seller (artist)
   useEffect(() => {
     const fetchCustomOrders = async () => {
-      if (!user) return;
+      if (!user || !userProfile) return;
       setCustomOrderLoading(true);
       try {
         const idToken = await user.getIdToken();
-        const orders = await fetchCustomOrdersForArtist(idToken, user?.uid);
+        const orders = await fetchCustomOrdersForArtist(idToken, userProfile.id);
         setCustomOrders(orders);
       } catch (err) {
         toast({ title: "Failed to fetch custom orders", variant: "destructive" });
@@ -100,8 +105,8 @@ const SellerDashboard = () => {
         setCustomOrderLoading(false);
       }
     };
-    if (user) fetchCustomOrders();
-  }, [user]);
+    if (user && userProfile) fetchCustomOrders();
+  }, [user, userProfile]);
 
   // Approve or reject order
   const handleOrderAction = async (orderId: string, action: 'accepted' | 'rejected') => {

@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { User, ShoppingCart, Search, LogOut, Palette } from "lucide-react";
+import { User, ShoppingCart, Search, LogOut, Palette, Package } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/lib/AuthContext";
 import {
@@ -84,6 +84,9 @@ export const Navigation = () => {
               {/* Actions */}
               <Link to="/cart" className="flex items-center gap-2 text-gray-700 hover:text-skecho-coral-dark text-lg" onClick={() => setDrawerOpen(false)}>
                 Cart
+              </Link>
+              <Link to="/my-orders" className="flex items-center gap-2 text-gray-700 hover:text-skecho-coral-dark text-lg" onClick={() => setDrawerOpen(false)}>
+                My Orders
               </Link>
               {/* Show 'Join as Artist' only if not already a seller */}
               {user && (
@@ -171,6 +174,12 @@ export const Navigation = () => {
                       <Link to="/edit-profile" className="flex items-center w-full">
                         <User className="w-4 h-4 mr-2" />
                         Profile
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem>
+                      <Link to="/my-orders" className="flex items-center w-full">
+                        <ShoppingCart className="w-4 h-4 mr-2" />
+                        My Orders
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
